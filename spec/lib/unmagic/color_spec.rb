@@ -262,7 +262,7 @@ RSpec.describe Unmagic::Color do
       color = Unmagic::Color.new(red: 100, green: 150, blue: 200)
       expect(color).not_to eq('#6496c8')
       expect(color).not_to eq(nil)
-      expect(color).not_to eq([100, 150, 200])
+      expect(color).not_to eq([ 100, 150, 200 ])
     end
   end
 

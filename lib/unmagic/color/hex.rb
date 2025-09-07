@@ -7,17 +7,17 @@ module Unmagic
         # Check if a string is a valid hex color
         def self.valid?(value)
           return false unless value.is_a?(String)
-          
+
           # Clean up the input
           hex = value.strip.gsub(/^#/, "")
-          
+
           # Check for valid length (3 or 6 characters)
           return false unless hex.length == 3 || hex.length == 6
-          
+
           # Check if all characters are valid hex digits
           hex.match?(/\A[0-9A-Fa-f]+\z/)
         end
-        
+
         # Parse hex string like "#FF8800" or "FF8800"
         def self.parse(input)
           return nil unless input.is_a?(String)
