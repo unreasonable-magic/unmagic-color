@@ -107,10 +107,10 @@ RSpec.describe Unmagic::Color::RGB do
     end
   end
 
-  describe 'inheritance' do
-    it 'inherits from Color' do
+  describe 'methods' do
+    it 'has expected methods' do
       color = Unmagic::Color::RGB.new(red: 100, green: 150, blue: 200)
-      expect(color).to be_a(Unmagic::Color)
+      expect(color).to be_a(Unmagic::Color::RGB)
       expect(color).to respond_to(:luminance)
       expect(color).to respond_to(:blend)
       expect(color).to respond_to(:contrast_color)

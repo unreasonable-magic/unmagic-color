@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
+require_relative '../rgb'
+
 module Unmagic
-  class Color
-    # Hex color representation
-    class Hex < Unmagic::Color
+  module Color
+    class RGB
+      # Hex color representation
+      class Hex < RGB
         # Check if a string is a valid hex color
         def self.valid?(value)
           return false unless value.is_a?(String)
@@ -41,6 +44,7 @@ module Unmagic
         rescue
           nil
         end
+      end
     end
   end
 end

@@ -6,19 +6,19 @@ RSpec.describe Unmagic::Color do
   describe '.parse' do
     it 'parses hex colors with hash' do
       color = Unmagic::Color.parse('#FF0000')
-      expect(color).to be_a(Unmagic::Color::Hex)
+      expect(color).to be_a(Unmagic::Color::RGB::Hex)
       expect(color.to_hex).to eq('#ff0000')
     end
 
     it 'parses hex colors without hash' do
       color = Unmagic::Color.parse('FF0000')
-      expect(color).to be_a(Unmagic::Color::Hex)
+      expect(color).to be_a(Unmagic::Color::RGB::Hex)
       expect(color.to_hex).to eq('#ff0000')
     end
 
     it 'parses 3-character hex codes' do
       color = Unmagic::Color.parse('#F00')
-      expect(color).to be_a(Unmagic::Color::Hex)
+      expect(color).to be_a(Unmagic::Color::RGB::Hex)
       expect(color.to_hex).to eq('#ff0000')
     end
 
@@ -33,9 +33,10 @@ RSpec.describe Unmagic::Color do
     it 'parses HSL format' do
       color = Unmagic::Color.parse('hsl(0, 100%, 50%)')
       expect(color).to be_a(Unmagic::Color::HSL)
-      expect(color.red).to eq(255)
-      expect(color.green).to eq(0)
-      expect(color.blue).to eq(0)
+      rgb = color.to_rgb
+      expect(rgb.red).to eq(255)
+      expect(rgb.green).to eq(0)
+      expect(rgb.blue).to eq(0)
     end
 
     it 'returns nil for invalid input' do
@@ -47,7 +48,7 @@ RSpec.describe Unmagic::Color do
 
     it 'handles whitespace' do
       color = Unmagic::Color.parse('  #FF0000  ')
-      expect(color).to be_a(Unmagic::Color::Hex)
+      expect(color).to be_a(Unmagic::Color::RGB::Hex)
       expect(color.to_hex).to eq('#ff0000')
     end
   end
@@ -244,7 +245,7 @@ RSpec.describe Unmagic::Color do
     it 'accepts string backgrounds' do
       color = Unmagic::Color.new(red: 128, green: 128, blue: 128)
       adjusted = color.adjust_for_contrast('#000000')
-      expect(adjusted).to be_a(Unmagic::Color)
+      expect(adjusted).to be_a(Unmagic::Color::RGB)
     end
   end
 

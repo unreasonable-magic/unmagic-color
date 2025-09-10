@@ -86,45 +86,51 @@ RSpec.describe Unmagic::Color::HSL do
     it 'converts to RGB correctly' do
       # Red
       red = Unmagic::Color::HSL.parse('hsl(0, 100%, 50%)')
-      expect(red.red).to eq(255)
-      expect(red.green).to eq(0)
-      expect(red.blue).to eq(0)
+      red_rgb = red.to_rgb
+      expect(red_rgb.red).to eq(255)
+      expect(red_rgb.green).to eq(0)
+      expect(red_rgb.blue).to eq(0)
 
       # Green
       green = Unmagic::Color::HSL.parse('hsl(120, 100%, 50%)')
-      expect(green.red).to eq(0)
-      expect(green.green).to eq(255)
-      expect(green.blue).to eq(0)
+      green_rgb = green.to_rgb
+      expect(green_rgb.red).to eq(0)
+      expect(green_rgb.green).to eq(255)
+      expect(green_rgb.blue).to eq(0)
 
       # Blue
       blue = Unmagic::Color::HSL.parse('hsl(240, 100%, 50%)')
-      expect(blue.red).to eq(0)
-      expect(blue.green).to eq(0)
-      expect(blue.blue).to eq(255)
+      blue_rgb = blue.to_rgb
+      expect(blue_rgb.red).to eq(0)
+      expect(blue_rgb.green).to eq(0)
+      expect(blue_rgb.blue).to eq(255)
 
       # Gray
       gray = Unmagic::Color::HSL.parse('hsl(0, 0%, 50%)')
-      expect(gray.red).to eq(128)
-      expect(gray.green).to eq(128)
-      expect(gray.blue).to eq(128)
+      gray_rgb = gray.to_rgb
+      expect(gray_rgb.red).to eq(128)
+      expect(gray_rgb.green).to eq(128)
+      expect(gray_rgb.blue).to eq(128)
 
       # White
       white = Unmagic::Color::HSL.parse('hsl(0, 0%, 100%)')
-      expect(white.red).to eq(255)
-      expect(white.green).to eq(255)
-      expect(white.blue).to eq(255)
+      white_rgb = white.to_rgb
+      expect(white_rgb.red).to eq(255)
+      expect(white_rgb.green).to eq(255)
+      expect(white_rgb.blue).to eq(255)
 
       # Black
       black = Unmagic::Color::HSL.parse('hsl(0, 0%, 0%)')
-      expect(black.red).to eq(0)
-      expect(black.green).to eq(0)
-      expect(black.blue).to eq(0)
+      black_rgb = black.to_rgb
+      expect(black_rgb.red).to eq(0)
+      expect(black_rgb.green).to eq(0)
+      expect(black_rgb.blue).to eq(0)
     end
 
     it 'handles hue wrapping' do
       color1 = Unmagic::Color::HSL.parse('hsl(0, 100%, 50%)')
       color2 = Unmagic::Color::HSL.parse('hsl(360, 100%, 50%)')
-      expect(color1.to_hex).to eq(color2.to_hex)
+      expect(color1.to_rgb.to_hex).to eq(color2.to_rgb.to_hex)
     end
 
     it 'returns nil for invalid input' do
@@ -168,20 +174,21 @@ RSpec.describe Unmagic::Color::HSL do
     end
   end
 
-  describe 'inheritance' do
-    it 'inherits from Color' do
+  describe 'methods' do
+    it 'has expected methods' do
       color = Unmagic::Color::HSL.new(hue: 180, saturation: 50, lightness: 50)
-      expect(color).to be_a(Unmagic::Color)
+      expect(color).to be_a(Unmagic::Color::HSL)
       expect(color).to respond_to(:luminance)
       expect(color).to respond_to(:blend)
       expect(color).to respond_to(:contrast_color)
     end
 
-    it 'has RGB values after initialization' do
+    it 'can convert to RGB after initialization' do
       color = Unmagic::Color::HSL.new(hue: 0, saturation: 100, lightness: 50)
-      expect(color.red).to eq(255)
-      expect(color.green).to eq(0)
-      expect(color.blue).to eq(0)
+      rgb = color.to_rgb
+      expect(rgb.red).to eq(255)
+      expect(rgb.green).to eq(0)
+      expect(rgb.blue).to eq(0)
     end
   end
 end
