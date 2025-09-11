@@ -16,7 +16,7 @@ module Unmagic
 
         # Parse hex string like "#FF8800" or "FF8800"
         def self.parse(input)
-          raise ParseError.new("Input must be a string") unless input.is_a?(String)
+          raise ParseError.new("Input must be a string") unless input.is_a?(::String)
 
           # Clean up the input
           hex = input.strip.gsub(/^#/, "")

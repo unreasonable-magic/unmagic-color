@@ -21,7 +21,7 @@ module Unmagic
 
       # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
       def self.parse(input)
-        raise ParseError.new("Input must be a string") unless input.is_a?(String)
+        raise ParseError.new("Input must be a string") unless input.is_a?(::String)
 
         # Remove hsl() wrapper if present
         clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
@@ -74,7 +74,7 @@ module Unmagic
       # Produces stable colors from hash function output.
       def self.derive(seed, lightness: 50, saturation_range: (40..80))
         raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
-        
+
         h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
         # Hue: distribute evenly across the color wheel
@@ -133,12 +133,11 @@ module Unmagic
         Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
       end
 
-
       def ==(other)
         other.is_a?(Unmagic::Color::HSL) &&
-          (@hue.value - other.hue.value).abs < 0.01 &&
-          (@saturation.value - other.saturation.value).abs < 0.01 &&
-          (@lightness.value - other.lightness.value).abs < 0.01
+          lightness == other.lightness &&
+          saturation == other.saturation &&
+          hue == other.hue
       end
 
       # Generate a progression of colors by applying lightness/saturation transformations

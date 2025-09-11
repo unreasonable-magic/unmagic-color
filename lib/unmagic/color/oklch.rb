@@ -24,7 +24,7 @@ module Unmagic
 
         # Parse OKLCH string like "oklch(0.58 0.15 180)" or "0.58 0.15 180"
         def self.parse(input)
-          raise ParseError.new("Input must be a string") unless input.is_a?(String)
+          raise ParseError.new("Input must be a string") unless input.is_a?(::String)
 
           # Remove oklch() wrapper if present
           clean = input.gsub(/^oklch\s*\(\s*|\s*\)$/, "").strip
@@ -68,7 +68,7 @@ module Unmagic
         # Produces stable colors from hash function output. Tweak ranges to taste.
         def self.derive(seed, lightness: 0.58, chroma_range: (0.10..0.18), hue_spread: 997, hue_base: 137.508)
           raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
-          
+
           h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
           # Hue: golden-angle style distribution to avoid clusters
@@ -173,9 +173,9 @@ module Unmagic
 
         def ==(other)
           other.is_a?(Unmagic::Color::OKLCH) &&
-            (@lightness.to_ratio - other.lightness.to_ratio).abs < 0.01 &&
-            (@chroma.value - other.chroma.value).abs < 0.01 &&
-            (@hue.value - other.hue.value).abs < 0.01
+            lightness == other.lightness &&
+            chroma == other.chroma &&
+            hue == other.hue
         end
 
         def to_s
@@ -187,7 +187,6 @@ module Unmagic
         def clamp01(x)
           [ [ x, 0.0 ].max, 1.0 ].min
         end
-
     end
   end
 end

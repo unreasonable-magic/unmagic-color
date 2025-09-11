@@ -3,7 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe Unmagic::Color::OKLCH do
-
   describe '.parse' do
     it 'parses OKLCH with parentheses' do
       color = Unmagic::Color::OKLCH.parse('oklch(0.58 0.15 180)')
@@ -82,7 +81,7 @@ RSpec.describe Unmagic::Color::OKLCH do
     it 'clamps lightness to 0-1' do
       color = Unmagic::Color::OKLCH.new(lightness: 1.5, chroma: 0.15, hue: 180)
       expect(color.lightness).to eq(1.0)
-      
+
       color = Unmagic::Color::OKLCH.new(lightness: -0.5, chroma: 0.15, hue: 180)
       expect(color.lightness).to eq(0.0)
     end
@@ -90,7 +89,7 @@ RSpec.describe Unmagic::Color::OKLCH do
     it 'clamps chroma to 0-0.5' do
       color = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: 0.8, hue: 180)
       expect(color.chroma).to eq(0.5)
-      
+
       color = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: -0.1, hue: 180)
       expect(color.chroma).to eq(0.0)
     end
@@ -98,7 +97,7 @@ RSpec.describe Unmagic::Color::OKLCH do
     it 'normalizes hue to 0-360' do
       color = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: 0.15, hue: 450)
       expect(color.hue).to eq(90)
-      
+
       color = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: 0.15, hue: -90)
       expect(color.hue).to eq(270)
     end
@@ -243,7 +242,7 @@ RSpec.describe Unmagic::Color::OKLCH do
       color1 = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: 0.15, hue: 180)
       color2 = Unmagic::Color::OKLCH.new(lightness: 0.58, chroma: 0.15, hue: 180)
       color3 = Unmagic::Color::OKLCH.new(lightness: 0.60, chroma: 0.15, hue: 180)
-      
+
       expect(color1).to eq(color2)
       expect(color1).not_to eq(color3)
     end

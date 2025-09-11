@@ -3,7 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe Unmagic::Color::HSL do
-
   describe '.parse' do
     it 'parses HSL with parentheses and percents' do
       color = Unmagic::Color::HSL.parse('hsl(180, 50%, 50%)')
@@ -276,7 +275,7 @@ RSpec.describe Unmagic::Color::HSL do
 
     describe 'array support' do
       it 'accepts arrays for lightness values' do
-        progression = base_hsl.progression(steps: 3, lightness: [20, 40, 60])
+        progression = base_hsl.progression(steps: 3, lightness: [ 20, 40, 60 ])
         expect(progression[0].lightness).to eq(20)
         expect(progression[1].lightness).to eq(40)
         expect(progression[2].lightness).to eq(60)
@@ -285,7 +284,7 @@ RSpec.describe Unmagic::Color::HSL do
       end
 
       it 'uses last array value when steps exceed array length' do
-        progression = base_hsl.progression(steps: 5, lightness: [20, 40, 60])
+        progression = base_hsl.progression(steps: 5, lightness: [ 20, 40, 60 ])
         expect(progression[0].lightness).to eq(20)
         expect(progression[1].lightness).to eq(40)
         expect(progression[2].lightness).to eq(60)
@@ -295,9 +294,9 @@ RSpec.describe Unmagic::Color::HSL do
 
       it 'accepts arrays for saturation values' do
         progression = base_hsl.progression(
-          steps: 3, 
-          lightness: [50, 50, 50], 
-          saturation: [10, 30, 80]
+          steps: 3,
+          lightness: [ 50, 50, 50 ],
+          saturation: [ 10, 30, 80 ]
         )
         expect(progression[0].saturation).to eq(10)
         expect(progression[1].saturation).to eq(30)
@@ -306,9 +305,9 @@ RSpec.describe Unmagic::Color::HSL do
 
       it 'uses last saturation array value when steps exceed array length' do
         progression = base_hsl.progression(
-          steps: 4, 
-          lightness: [50, 50, 50, 50], 
-          saturation: [10, 30]
+          steps: 4,
+          lightness: [ 50, 50, 50, 50 ],
+          saturation: [ 10, 30 ]
         )
         expect(progression[0].saturation).to eq(10)
         expect(progression[1].saturation).to eq(30)
@@ -320,7 +319,7 @@ RSpec.describe Unmagic::Color::HSL do
         # Array for lightness, proc for saturation
         progression = base_hsl.progression(
           steps: 3,
-          lightness: [20, 50, 80],
+          lightness: [ 20, 50, 80 ],
           saturation: ->(_hsl, i) { 10 + (i * 20) }
         )
         expect(progression[0].lightness).to eq(20)
@@ -334,8 +333,8 @@ RSpec.describe Unmagic::Color::HSL do
       it 'clamps array values to valid ranges' do
         progression = base_hsl.progression(
           steps: 3,
-          lightness: [-10, 50, 150],
-          saturation: [-5, 50, 120]
+          lightness: [ -10, 50, 150 ],
+          saturation: [ -5, 50, 120 ]
         )
         expect(progression[0].lightness).to eq(0)    # -10 clamped to 0
         expect(progression[0].saturation).to eq(0)   # -5 clamped to 0
@@ -381,7 +380,7 @@ RSpec.describe Unmagic::Color::HSL do
           lightness: ->(hsl, i) { hsl.lightness + (i * 10) }
         )
 
-        expected_lightness = [50, 60, 70, 80, 90, 100]
+        expected_lightness = [ 50, 60, 70, 80, 90, 100 ]
         actual_lightness = progression.map(&:lightness)
         expect(actual_lightness).to eq(expected_lightness)
       end

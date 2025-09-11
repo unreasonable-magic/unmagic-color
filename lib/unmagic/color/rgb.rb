@@ -28,7 +28,7 @@ module Unmagic
 
       # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0" or hex like "#FF8800" or "FF8800"
       def self.parse(input)
-        raise ParseError.new("Input must be a string") unless input.is_a?(String)
+        raise ParseError.new("Input must be a string") unless input.is_a?(::String)
 
         input = input.strip
 
@@ -45,25 +45,25 @@ module Unmagic
       # Produces stable colors from hash function output.
       def self.derive(seed, brightness: 180, saturation: 0.7)
         raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
-        
+
         h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
         # Extract RGB components from different parts of the hash
         r_base = (h32 & 0xFF)
-        g_base = ((h32 >> 8) & 0xFF) 
+        g_base = ((h32 >> 8) & 0xFF)
         b_base = ((h32 >> 16) & 0xFF)
 
         # Apply brightness and saturation adjustments
         # Brightness controls the average RGB value
         # Saturation controls how much the channels differ from each other
-        
+
         avg = (r_base + g_base + b_base) / 3.0
-        
+
         # Adjust each channel relative to average
         r = avg + (r_base - avg) * saturation
-        g = avg + (g_base - avg) * saturation  
+        g = avg + (g_base - avg) * saturation
         b = avg + (b_base - avg) * saturation
-        
+
         # Scale to target brightness
         scale = brightness / 127.5 # 127.5 is middle of 0-255
         r = (r * scale).clamp(0, 255).round
@@ -74,7 +74,6 @@ module Unmagic
       end
 
       private
-
 
       # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
       def self.parse_rgb_format(input)
@@ -196,9 +195,9 @@ module Unmagic
 
       def ==(other)
         other.is_a?(Unmagic::Color::RGB) &&
-          @red.value == other.red.value &&
-          @green.value == other.green.value &&
-          @blue.value == other.blue.value
+          @red == other.red &&
+          @green == other.green &&
+          @blue == other.blue
       end
 
       def to_s
