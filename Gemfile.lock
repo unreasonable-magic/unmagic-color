@@ -1,6 +1,6 @@
 GIT
   remote: git@github.com:unreasonable-magic/unmagic-support
-  revision: b286b813e690f00d39287f59f81fdbcef3363e31
+  revision: 947ea8bebd129c7fef149f6c1a282071e8807862
   specs:
     unmagic-support (0.1.0)
       activesupport (>= 7.0)

@@ -20,10 +20,10 @@ module Unmagic
           @hue = Color::Hue.new(value: hue)
         end
 
-        # Delegate to unit values for backward compatibility
-        def lightness = @lightness.to_ratio # Return 0-1 range for OKLCH
-        def chroma = @chroma.value
-        def hue = @hue.value
+        # Return unit instances directly, but lightness as ratio for OKLCH
+        def lightness = @lightness.to_ratio
+        def chroma = @chroma
+        def hue = @hue
 
         # Helper method for working with lightness in percentage form
         def lightness_percentage = @lightness.value
@@ -152,10 +152,10 @@ module Unmagic
           other_oklch = other.respond_to?(:to_oklch) ? other.to_oklch : other
 
           # Blend in OKLCH space with shortest-arc hue interpolation
-          dh = (((other_oklch.hue - @hue.value + 540) % 360) - 180)
+          dh = (((other_oklch.hue.value - @hue.value + 540) % 360) - 180)
           new_hue = (@hue.value + dh * amount) % 360
-          new_lightness = @lightness.to_ratio + (other_oklch.lightness - @lightness.to_ratio) * amount
-          new_chroma = @chroma.value + (other_oklch.chroma - @chroma.value) * amount
+          new_lightness = @lightness.to_ratio + (other_oklch.lightness.to_ratio - @lightness.to_ratio) * amount
+          new_chroma = @chroma.value + (other_oklch.chroma.value - @chroma.value) * amount
 
           self.class.new(lightness: new_lightness, chroma: new_chroma, hue: new_hue)
         end
@@ -178,9 +178,9 @@ module Unmagic
 
         def ==(other)
           other.is_a?(Unmagic::Color::OKLCH) &&
-            (@lightness.to_ratio - other.lightness).abs < 0.01 &&
-            (@chroma.value - other.chroma).abs < 0.01 &&
-            (@hue.value - other.hue).abs < 0.01
+            (@lightness.to_ratio - other.lightness.to_ratio).abs < 0.01 &&
+            (@chroma.value - other.chroma.value).abs < 0.01 &&
+            (@hue.value - other.hue.value).abs < 0.01
         end
 
         def to_s

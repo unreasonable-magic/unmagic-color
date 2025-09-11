@@ -39,12 +39,23 @@ module Unmagic
 
     # Base unit for RGB components (0-255)
     Component = Data.define(:value) do
+      include Comparable
+      
       def initialize(value:)
         super(value: value.to_i.clamp(0, 255))
       end
 
       def to_i = value
       def to_f = value.to_f
+      
+      def <=>(other)
+        case other
+        when Component, Numeric
+          value <=> other.to_f
+        else
+          nil
+        end
+      end
 
       # Arithmetic operations that return new instances
       def *(other)
@@ -61,6 +72,10 @@ module Unmagic
 
       def -(other)
         self.class.new(value: value - other.to_f)
+      end
+
+      def abs
+        self.class.new(value: value.abs)
       end
     end
 
@@ -70,12 +85,23 @@ module Unmagic
 
     # Angular unit for hue (0-360 degrees, wrapping)
     Hue = Data.define(:value) do
+      include Comparable
+      
       def initialize(value:)
         super(value: value.to_f % 360)
       end
 
       def to_f = value
       def degrees = value
+      
+      def <=>(other)
+        case other
+        when Hue, Numeric
+          value <=> other.to_f
+        else
+          nil
+        end
+      end
 
       # Arithmetic operations that return new instances
       def *(other)
@@ -92,16 +118,31 @@ module Unmagic
 
       def -(other)
         self.class.new(value: value - other.to_f)
+      end
+
+      def abs
+        self.class.new(value: value.abs)
       end
     end
 
     # OKLCH chroma unit (0-0.5)
     Chroma = Data.define(:value) do
+      include Comparable
+      
       def initialize(value:)
         super(value: value.to_f.clamp(0, 0.5))
       end
 
       def to_f = value
+      
+      def <=>(other)
+        case other
+        when Chroma, Numeric
+          value <=> other.to_f
+        else
+          nil
+        end
+      end
 
       # Arithmetic operations that return new instances
       def *(other)
@@ -118,6 +159,10 @@ module Unmagic
 
       def -(other)
         self.class.new(value: value - other.to_f)
+      end
+
+      def abs
+        self.class.new(value: value.abs)
       end
     end
 

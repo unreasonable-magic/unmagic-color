@@ -14,10 +14,10 @@ module Unmagic
         @blue = Color::Blue.new(value: blue)
       end
 
-      # Delegate to unit values for backward compatibility
-      def red = @red.value
-      def green = @green.value
-      def blue = @blue.value
+      # Return unit instances directly
+      def red = @red
+      def green = @green
+      def blue = @blue
 
       # Check if a string is a valid RGB color (rgb format or hex format)
       def self.valid?(value)
@@ -152,9 +152,9 @@ module Unmagic
         other_rgb = other.respond_to?(:to_rgb) ? other.to_rgb : other
 
         Unmagic::Color::RGB.new(
-          red: (@red.value * (1 - amount) + other_rgb.red * amount).round,
-          green: (@green.value * (1 - amount) + other_rgb.green * amount).round,
-          blue: (@blue.value * (1 - amount) + other_rgb.blue * amount).round
+          red: (@red.value * (1 - amount) + other_rgb.red.value * amount).round,
+          green: (@green.value * (1 - amount) + other_rgb.green.value * amount).round,
+          blue: (@blue.value * (1 - amount) + other_rgb.blue.value * amount).round
         )
       end
 
@@ -171,9 +171,9 @@ module Unmagic
 
       def ==(other)
         other.is_a?(Unmagic::Color::RGB) &&
-          @red.value == other.red &&
-          @green.value == other.green &&
-          @blue.value == other.blue
+          @red.value == other.red.value &&
+          @green.value == other.green.value &&
+          @blue.value == other.blue.value
       end
 
       def to_s

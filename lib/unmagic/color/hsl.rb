@@ -20,10 +20,10 @@ module Unmagic
         @lightness = Color::Lightness.new(lightness)
       end
 
-      # Delegate to unit values for backward compatibility
-      def hue = @hue.value
-      def saturation = @saturation.value
-      def lightness = @lightness.value
+      # Return unit instances directly
+      def hue = @hue
+      def saturation = @saturation
+      def lightness = @lightness
 
       # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
       def self.parse(input)
@@ -102,9 +102,9 @@ module Unmagic
         other_hsl = other.respond_to?(:to_hsl) ? other.to_hsl : other
 
         # Blend in HSL space
-        new_hue = @hue.value * (1 - amount) + other_hsl.hue * amount
-        new_saturation = @saturation.value * (1 - amount) + other_hsl.saturation * amount
-        new_lightness = @lightness.value * (1 - amount) + other_hsl.lightness * amount
+        new_hue = @hue.value * (1 - amount) + other_hsl.hue.value * amount
+        new_saturation = @saturation.value * (1 - amount) + other_hsl.saturation.value * amount
+        new_lightness = @lightness.value * (1 - amount) + other_hsl.lightness.value * amount
 
         Unmagic::Color::HSL.new(hue: new_hue, saturation: new_saturation, lightness: new_lightness)
       end
@@ -126,9 +126,9 @@ module Unmagic
 
       def ==(other)
         other.is_a?(Unmagic::Color::HSL) &&
-          (@hue.value - other.hue).abs < 0.01 &&
-          (@saturation.value - other.saturation).abs < 0.01 &&
-          (@lightness.value - other.lightness).abs < 0.01
+          (@hue.value - other.hue.value).abs < 0.01 &&
+          (@saturation.value - other.saturation.value).abs < 0.01 &&
+          (@lightness.value - other.lightness.value).abs < 0.01
       end
 
       # Generate a progression of colors by applying lightness/saturation transformations
