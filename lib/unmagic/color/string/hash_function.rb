@@ -199,6 +199,10 @@ module Unmagic
         # Default algorithm - BKDR for its excellent distribution
         DEFAULT = BKDR
 
+        def self.call(str)
+          DEFAULT.call(str)
+        end
+
         # Get all available algorithms
         def self.all
           constants.select { |c| const_get(c).is_a?(Proc) }
