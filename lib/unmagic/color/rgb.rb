@@ -1,55 +1,82 @@
 # frozen_string_literal: true
 
 module Unmagic
-  module Color
+  class Color
     # RGB color representation
-    class RGB
+    class RGB < Color
+      class ParseError < Color::Error; end
+
       attr_reader :red, :green, :blue
 
       def initialize(red:, green:, blue:)
-        @red = red.to_i.clamp(0, 255)
-        @green = green.to_i.clamp(0, 255)
-        @blue = blue.to_i.clamp(0, 255)
+        @red = Color::Red.new(value: red)
+        @green = Color::Green.new(value: green)
+        @blue = Color::Blue.new(value: blue)
       end
 
-      # Check if a string is a valid RGB color
+      # Delegate to unit values for backward compatibility
+      def red = @red.value
+      def green = @green.value
+      def blue = @blue.value
+
+      # Check if a string is a valid RGB color (rgb format or hex format)
       def self.valid?(value)
-        return false unless value.is_a?(String)
-
-        # Remove rgb() wrapper if present
-        clean = value.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
-
-        # Split and check values
-        values = clean.split(/\s*,\s*/)
-        return false unless values.length == 3
-
-        # Check if all values are valid integers 0-255
-        values.all? { |v| v.match?(/\A\d+\z/) && v.to_i.between?(0, 255) }
-      rescue
+        parse(value)
+        true
+      rescue ParseError, Hex::ParseError
         false
       end
 
-      # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0"
-      def self.parse(input)
-        return nil unless input.is_a?(String)
+      private
 
+
+
+      public
+
+      # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0" or hex like "#FF8800" or "FF8800"
+      def self.parse(input)
+        raise ParseError.new("Input must be a string") unless input.is_a?(String)
+
+        input = input.strip
+
+        # Check if it looks like a hex color (starts with # or only contains hex digits)
+        if input.start_with?("#") || input.match?(/\A[0-9A-Fa-f]{3,6}\z/)
+          return Hex.parse(input)
+        end
+
+        # Try to parse as RGB format
+        parse_rgb_format(input)
+      end
+
+      private
+
+
+      # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
+      def self.parse_rgb_format(input)
         # Remove rgb() wrapper if present
         clean = input.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
 
         # Split values
         values = clean.split(/\s*,\s*/)
-        return nil unless values.length == 3
+        unless values.length == 3
+          raise ParseError.new("Expected 3 RGB values, got #{values.length}")
+        end
 
         # Check if all values are numeric (allow negative for clamping)
-        return nil unless values.all? { |v| v.match?(/\A-?\d+\z/) }
+        values.each_with_index do |v, i|
+          unless v.match?(/\A-?\d+\z/)
+            component = %w[red green blue][i]
+            raise ParseError.new("Invalid #{component} value: #{v.inspect} (must be a number)")
+          end
+        end
 
-        # Convert to integers (base class will clamp)
+        # Convert to integers (constructor will clamp)
         parsed = values.map(&:to_i)
 
         new(red: parsed[0], green: parsed[1], blue: parsed[2])
-      rescue
-        nil
       end
+
+      public
 
       # Convert to RGB representation (returns self)
       def to_rgb
@@ -58,14 +85,14 @@ module Unmagic
 
       # Convert to hex string
       def to_hex
-        "#%02x%02x%02x" % [ @red, @green, @blue ]
+        "#%02x%02x%02x" % [ @red.value, @green.value, @blue.value ]
       end
 
       # Convert to HSL
       def to_hsl
-        r = @red / 255.0
-        g = @green / 255.0
-        b = @blue / 255.0
+        r = @red.value / 255.0
+        g = @green.value / 255.0
+        b = @blue.value / 255.0
 
         max = [ r, g, b ].max
         min = [ r, g, b ].min
@@ -90,14 +117,27 @@ module Unmagic
           end
         end
 
-        HSL.new(hue: (h * 360).round, saturation: (s * 100).round, lightness: (l * 100).round)
+        Unmagic::Color::HSL.new(hue: (h * 360).round, saturation: (s * 100).round, lightness: (l * 100).round)
       end
 
+      # Convert to OKLCH (placeholder - would need complex conversion)
+      def to_oklch
+        # For now, simple approximation based on RGB -> HSL -> OKLCH
+        # This is a simplified placeholder
+        require_relative "oklch"
+        # Convert lightness roughly from RGB luminance
+        l = luminance
+        # Approximate chroma from saturation and lightness
+        hsl = to_hsl
+        c = (hsl.saturation / 100.0) * 0.2 * (1 - (l - 0.5).abs * 2)
+        h = hsl.hue
+        Unmagic::Color::OKLCH.new(lightness: l, chroma: c, hue: h)
+      end
 
       def luminance
-        r = @red / 255.0
-        g = @green / 255.0
-        b = @blue / 255.0
+        r = @red.value / 255.0
+        g = @green.value / 255.0
+        b = @blue.value / 255.0
 
         r = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4
         g = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4
@@ -111,72 +151,29 @@ module Unmagic
         amount = amount.to_f.clamp(0, 1)
         other_rgb = other.respond_to?(:to_rgb) ? other.to_rgb : other
 
-        RGB.new(
-          red: (@red * (1 - amount) + other_rgb.red * amount).round,
-          green: (@green * (1 - amount) + other_rgb.green * amount).round,
-          blue: (@blue * (1 - amount) + other_rgb.blue * amount).round
+        Unmagic::Color::RGB.new(
+          red: (@red.value * (1 - amount) + other_rgb.red * amount).round,
+          green: (@green.value * (1 - amount) + other_rgb.green * amount).round,
+          blue: (@blue.value * (1 - amount) + other_rgb.blue * amount).round
         )
       end
 
       # Lighten by blending with white
       def lighten(amount = 0.1)
-        blend(RGB.new(red: 255, green: 255, blue: 255), amount)
+        blend(Unmagic::Color::RGB.new(red: 255, green: 255, blue: 255), amount)
       end
 
       # Darken by blending with black
       def darken(amount = 0.1)
-        blend(RGB.new(red: 0, green: 0, blue: 0), amount)
+        blend(Unmagic::Color::RGB.new(red: 0, green: 0, blue: 0), amount)
       end
 
-      # Determine if this is a light or dark color
-      def light?
-        luminance > 0.5
-      end
-
-      def dark?
-        !light?
-      end
-
-      # Get contrasting color (black or white)
-      def contrast_color
-        light? ? RGB.new(red: 0, green: 0, blue: 0) : RGB.new(red: 255, green: 255, blue: 255)
-      end
-
-      # Calculate WCAG contrast ratio with another color
-      def contrast_ratio(other)
-        other = Unmagic::Color.parse(other) if other.is_a?(String)
-        return 1.0 unless other
-
-        l1 = luminance
-        l2 = other.luminance
-
-        lighter = [ l1, l2 ].max
-        darker = [ l1, l2 ].min
-
-        (lighter + 0.05) / (darker + 0.05)
-      end
-
-      # Adjust this color to ensure sufficient contrast against a background
-      def adjust_for_contrast(background, target_ratio = 4.5)
-        background = Unmagic::Color.parse(background) if background.is_a?(String)
-        return self unless background
-
-        current_ratio = contrast_ratio(background)
-        return self if current_ratio >= target_ratio
-
-        # Adjust based on background lightness
-        if background.light?
-          darken(0.3)
-        else
-          lighten(0.3)
-        end
-      end
 
       def ==(other)
-        other.is_a?(RGB) &&
-          @red == other.red &&
-          @green == other.green &&
-          @blue == other.blue
+        other.is_a?(Unmagic::Color::RGB) &&
+          @red.value == other.red &&
+          @green.value == other.green &&
+          @blue.value == other.blue
       end
 
       def to_s
@@ -185,4 +182,3 @@ module Unmagic
     end
   end
 end
-

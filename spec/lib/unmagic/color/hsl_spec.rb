@@ -133,13 +133,13 @@ RSpec.describe Unmagic::Color::HSL do
       expect(color1.to_rgb.to_hex).to eq(color2.to_rgb.to_hex)
     end
 
-    it 'returns nil for invalid input' do
-      expect(Unmagic::Color::HSL.parse('hsl(180, 50%)')).to be_nil
-      expect(Unmagic::Color::HSL.parse('hsl(red, green, blue)')).to be_nil
-      expect(Unmagic::Color::HSL.parse('180 50 50')).to be_nil
-      expect(Unmagic::Color::HSL.parse('')).to be_nil
-      expect(Unmagic::Color::HSL.parse(nil)).to be_nil
-      expect(Unmagic::Color::HSL.parse(123)).to be_nil
+    it 'raises ParseError for invalid input' do
+      expect { Unmagic::Color::HSL.parse('hsl(180, 50%)') }.to raise_error(Unmagic::Color::HSL::ParseError)
+      expect { Unmagic::Color::HSL.parse('hsl(red, green, blue)') }.to raise_error(Unmagic::Color::HSL::ParseError)
+      expect { Unmagic::Color::HSL.parse('180 50 50') }.to raise_error(Unmagic::Color::HSL::ParseError)
+      expect { Unmagic::Color::HSL.parse('') }.to raise_error(Unmagic::Color::HSL::ParseError)
+      expect { Unmagic::Color::HSL.parse(nil) }.to raise_error(Unmagic::Color::HSL::ParseError)
+      expect { Unmagic::Color::HSL.parse(123) }.to raise_error(Unmagic::Color::HSL::ParseError)
     end
   end
 
@@ -180,7 +180,6 @@ RSpec.describe Unmagic::Color::HSL do
       expect(color).to be_a(Unmagic::Color::HSL)
       expect(color).to respond_to(:luminance)
       expect(color).to respond_to(:blend)
-      expect(color).to respond_to(:contrast_color)
     end
 
     it 'can convert to RGB after initialization' do
@@ -189,6 +188,224 @@ RSpec.describe Unmagic::Color::HSL do
       expect(rgb.red).to eq(255)
       expect(rgb.green).to eq(0)
       expect(rgb.blue).to eq(0)
+    end
+  end
+
+  describe '#progression' do
+    let(:base_hsl) { Unmagic::Color::HSL.new(hue: 180, saturation: 50, lightness: 50) }
+
+    it 'creates the specified number of color steps' do
+      progression = base_hsl.progression(steps: 5, lightness: ->(_hsl, _i) { 80 })
+      expect(progression.length).to eq(5)
+      expect(progression.all? { |color| color.is_a?(Unmagic::Color::HSL) }).to be true
+    end
+
+    it 'applies lightness transformation using provided proc' do
+      # Simple hardcoded lightness
+      progression = base_hsl.progression(steps: 3, lightness: ->(_hsl, _i) { 80 })
+      expect(progression.all? { |color| color.lightness == 80 }).to be true
+      expect(progression.all? { |color| color.hue == 180 }).to be true
+      expect(progression.all? { |color| color.saturation == 50 }).to be true
+    end
+
+    it 'provides step index to lightness proc' do
+      # Lightness increases by step index * 10
+      progression = base_hsl.progression(steps: 4, lightness: ->(_hsl, i) { 10 + (i * 20) })
+      expect(progression[0].lightness).to eq(10)  # step 0: 10 + (0 * 20)
+      expect(progression[1].lightness).to eq(30)  # step 1: 10 + (1 * 20)
+      expect(progression[2].lightness).to eq(50)  # step 2: 10 + (2 * 20)
+      expect(progression[3].lightness).to eq(70)  # step 3: 10 + (3 * 20)
+    end
+
+    it 'provides HSL instance to lightness proc' do
+      # Lightness based on current HSL values
+      progression = base_hsl.progression(
+        steps: 3,
+        lightness: ->(hsl, _i) { hsl.lightness < 50 ? 20 : 80 }
+      )
+      expect(progression.all? { |color| color.lightness == 80 }).to be true
+    end
+
+    it 'applies saturation transformation when provided' do
+      progression = base_hsl.progression(
+        steps: 3,
+        lightness: ->(_hsl, _i) { 50 },
+        saturation: ->(_hsl, i) { 20 + (i * 15) }
+      )
+      expect(progression[0].saturation).to eq(20)  # step 0: 20 + (0 * 15)
+      expect(progression[1].saturation).to eq(35)  # step 1: 20 + (1 * 15)
+      expect(progression[2].saturation).to eq(50)  # step 2: 20 + (2 * 15)
+    end
+
+    it 'keeps original saturation when saturation proc not provided' do
+      progression = base_hsl.progression(steps: 3, lightness: ->(_hsl, _i) { 80 })
+      expect(progression.all? { |color| color.saturation == 50 }).to be true
+    end
+
+    it 'clamps lightness values to 0-100' do
+      progression = base_hsl.progression(
+        steps: 3,
+        lightness: ->(_hsl, i) { i == 0 ? -10 : (i == 1 ? 50 : 110) }
+      )
+      expect(progression[0].lightness).to eq(0)    # -10 clamped to 0
+      expect(progression[1].lightness).to eq(50)   # 50 unchanged
+      expect(progression[2].lightness).to eq(100)  # 110 clamped to 100
+    end
+
+    it 'clamps saturation values to 0-100' do
+      progression = base_hsl.progression(
+        steps: 3,
+        lightness: ->(_hsl, _i) { 50 },
+        saturation: ->(_hsl, i) { i == 0 ? -5 : (i == 1 ? 50 : 150) }
+      )
+      expect(progression[0].saturation).to eq(0)    # -5 clamped to 0
+      expect(progression[1].saturation).to eq(50)   # 50 unchanged
+      expect(progression[2].saturation).to eq(100)  # 150 clamped to 100
+    end
+
+    it 'preserves hue across all steps' do
+      progression = base_hsl.progression(steps: 5, lightness: ->(_hsl, i) { i * 20 })
+      expect(progression.all? { |color| color.hue == 180 }).to be true
+    end
+
+    it 'works with complex progression logic' do
+      # Theme-like progression: lighter in middle, darker at ends
+      progression = base_hsl.progression(
+        steps: 5,
+        lightness: ->(hsl, i) do
+          case i
+          when 0, 4 then 20  # dark at ends
+          when 1, 3 then 40  # medium
+          when 2 then 80     # light in middle
+          end
+        end,
+        saturation: ->(hsl, i) { i < 3 ? hsl.saturation : hsl.saturation - 10 }
+      )
+
+      expect(progression[0].lightness).to eq(20)
+      expect(progression[1].lightness).to eq(40)
+      expect(progression[2].lightness).to eq(80)
+      expect(progression[3].lightness).to eq(40)
+      expect(progression[4].lightness).to eq(20)
+
+      expect(progression[0].saturation).to eq(50)  # < 3, unchanged
+      expect(progression[1].saturation).to eq(50)  # < 3, unchanged
+      expect(progression[2].saturation).to eq(50)  # < 3, unchanged
+      expect(progression[3].saturation).to eq(40)  # >= 3, reduced by 10
+      expect(progression[4].saturation).to eq(40)  # >= 3, reduced by 10
+    end
+
+    describe 'array support' do
+      it 'accepts arrays for lightness values' do
+        progression = base_hsl.progression(steps: 3, lightness: [20, 40, 60])
+        expect(progression[0].lightness).to eq(20)
+        expect(progression[1].lightness).to eq(40)
+        expect(progression[2].lightness).to eq(60)
+        expect(progression.all? { |color| color.hue == 180 }).to be true
+        expect(progression.all? { |color| color.saturation == 50 }).to be true
+      end
+
+      it 'uses last array value when steps exceed array length' do
+        progression = base_hsl.progression(steps: 5, lightness: [20, 40, 60])
+        expect(progression[0].lightness).to eq(20)
+        expect(progression[1].lightness).to eq(40)
+        expect(progression[2].lightness).to eq(60)
+        expect(progression[3].lightness).to eq(60)  # uses last value
+        expect(progression[4].lightness).to eq(60)  # uses last value
+      end
+
+      it 'accepts arrays for saturation values' do
+        progression = base_hsl.progression(
+          steps: 3, 
+          lightness: [50, 50, 50], 
+          saturation: [10, 30, 80]
+        )
+        expect(progression[0].saturation).to eq(10)
+        expect(progression[1].saturation).to eq(30)
+        expect(progression[2].saturation).to eq(80)
+      end
+
+      it 'uses last saturation array value when steps exceed array length' do
+        progression = base_hsl.progression(
+          steps: 4, 
+          lightness: [50, 50, 50, 50], 
+          saturation: [10, 30]
+        )
+        expect(progression[0].saturation).to eq(10)
+        expect(progression[1].saturation).to eq(30)
+        expect(progression[2].saturation).to eq(30)  # uses last value
+        expect(progression[3].saturation).to eq(30)  # uses last value
+      end
+
+      it 'can mix arrays and procs' do
+        # Array for lightness, proc for saturation
+        progression = base_hsl.progression(
+          steps: 3,
+          lightness: [20, 50, 80],
+          saturation: ->(_hsl, i) { 10 + (i * 20) }
+        )
+        expect(progression[0].lightness).to eq(20)
+        expect(progression[0].saturation).to eq(10)
+        expect(progression[1].lightness).to eq(50)
+        expect(progression[1].saturation).to eq(30)
+        expect(progression[2].lightness).to eq(80)
+        expect(progression[2].saturation).to eq(50)
+      end
+
+      it 'clamps array values to valid ranges' do
+        progression = base_hsl.progression(
+          steps: 3,
+          lightness: [-10, 50, 150],
+          saturation: [-5, 50, 120]
+        )
+        expect(progression[0].lightness).to eq(0)    # -10 clamped to 0
+        expect(progression[0].saturation).to eq(0)   # -5 clamped to 0
+        expect(progression[1].lightness).to eq(50)   # 50 unchanged
+        expect(progression[1].saturation).to eq(50)  # 50 unchanged
+        expect(progression[2].lightness).to eq(100)  # 150 clamped to 100
+        expect(progression[2].saturation).to eq(100) # 120 clamped to 100
+      end
+    end
+
+    describe 'error handling' do
+      it 'raises error for invalid steps' do
+        expect {
+          base_hsl.progression(steps: 0, lightness: ->(_hsl, _i) { 50 })
+        }.to raise_error(ArgumentError, "steps must be at least 1")
+      end
+
+      it 'raises error for invalid lightness type' do
+        expect {
+          base_hsl.progression(steps: 3, lightness: 50)
+        }.to raise_error(ArgumentError, "lightness must be a proc or array")
+      end
+
+      it 'raises error for invalid saturation type' do
+        expect {
+          base_hsl.progression(steps: 3, lightness: ->(_hsl, _i) { 50 }, saturation: 30)
+        }.to raise_error(ArgumentError, "saturation must be a proc or array")
+      end
+    end
+
+    describe 'usage examples' do
+      it 'creates simple black-to-white progression' do
+        black_progression = base_hsl.progression(steps: 3, lightness: ->(_hsl, _i) { 0 })
+        white_progression = base_hsl.progression(steps: 3, lightness: ->(_hsl, _i) { 100 })
+
+        expect(black_progression.all? { |c| c.lightness == 0 }).to be true
+        expect(white_progression.all? { |c| c.lightness == 100 }).to be true
+      end
+
+      it 'creates linear lightness progression' do
+        progression = base_hsl.progression(
+          steps: 6,
+          lightness: ->(hsl, i) { hsl.lightness + (i * 10) }
+        )
+
+        expected_lightness = [50, 60, 70, 80, 90, 100]
+        actual_lightness = progression.map(&:lightness)
+        expect(actual_lightness).to eq(expected_lightness)
+      end
     end
   end
 end

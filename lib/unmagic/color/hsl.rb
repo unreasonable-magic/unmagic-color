@@ -1,78 +1,79 @@
 # frozen_string_literal: true
 
 module Unmagic
-  module Color
-    class HSL
+  class Color
+    class HSL < Color
+      class ParseError < Color::Error; end
+
       attr_reader :hue, :saturation, :lightness
 
       def self.valid?(value)
-        return false unless value.is_a?(String)
-
-        # Remove hsl() wrapper if present
-        clean = value.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
-
-        # Split values
-        parts = clean.split(/\s*,\s*/)
-        return false unless parts.length == 3
-
-        # Check hue (0-360)
-        h = parts[0].strip
-        return false unless h.match?(/\A\d+(\.\d+)?\z/)
-        h_val = h.to_f
-        return false unless h_val >= 0 && h_val <= 360
-
-        # Check saturation and lightness (0-100%)
-        s = parts[1].gsub("%", "").strip
-        l = parts[2].gsub("%", "").strip
-
-        return false unless s.match?(/\A\d+(\.\d+)?\z/)
-        return false unless l.match?(/\A\d+(\.\d+)?\z/)
-
-        s_val = s.to_f
-        l_val = l.to_f
-        return false unless s_val >= 0 && s_val <= 100
-        return false unless l_val >= 0 && l_val <= 100
-
+        parse(value)
         true
-      rescue
+      rescue ParseError
         false
       end
 
       def initialize(hue:, saturation:, lightness:)
-        @hue = hue.to_f % 360
-        # Store as percentages (0-100) for consistency
-        @saturation = saturation.to_f.clamp(0, 100)
-        @lightness = lightness.to_f.clamp(0, 100)
+        @hue = Color::Hue.new(value: hue)
+        @saturation = Color::Saturation.new(saturation)
+        @lightness = Color::Lightness.new(lightness)
       end
+
+      # Delegate to unit values for backward compatibility
+      def hue = @hue.value
+      def saturation = @saturation.value
+      def lightness = @lightness.value
 
       # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
       def self.parse(input)
-        return nil unless input.is_a?(String)
+        raise ParseError.new("Input must be a string") unless input.is_a?(String)
 
         # Remove hsl() wrapper if present
         clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
 
         # Split and parse values
         parts = clean.split(/\s*,\s*/)
-        return nil unless parts.length == 3
+        unless parts.length == 3
+          raise ParseError.new("Expected 3 HSL values, got #{parts.length}")
+        end
 
         # Check if hue is numeric
         h_str = parts[0].strip
-        return nil unless h_str.match?(/\A\d+(\.\d+)?\z/)
+        unless h_str.match?(/\A\d+(\.\d+)?\z/)
+          raise ParseError.new("Invalid hue value: #{h_str.inspect} (must be a number)")
+        end
 
         # Check if saturation and lightness are numeric (with optional %)
         s_str = parts[1].gsub("%", "").strip
         l_str = parts[2].gsub("%", "").strip
-        return nil unless s_str.match?(/\A\d+(\.\d+)?\z/)
-        return nil unless l_str.match?(/\A\d+(\.\d+)?\z/)
+        
+        unless s_str.match?(/\A\d+(\.\d+)?\z/)
+          raise ParseError.new("Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)")
+        end
+        
+        unless l_str.match?(/\A\d+(\.\d+)?\z/)
+          raise ParseError.new("Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)")
+        end
 
         h = h_str.to_f
         s = s_str.to_f
         l = l_str.to_f
 
+        # Validate ranges
+        unless h >= 0 && h <= 360
+          raise ParseError.new("Hue must be between 0 and 360, got #{h}")
+        end
+        
+        unless s >= 0 && s <= 100
+          raise ParseError.new("Saturation must be between 0 and 100, got #{s}")
+        end
+        
+        unless l >= 0 && l <= 100
+          raise ParseError.new("Lightness must be between 0 and 100, got #{l}")
+        end
+
         new(hue: h, saturation: s, lightness: l)
-      rescue
-        nil
       end
 
       def to_hsl
@@ -82,11 +83,14 @@ module Unmagic
       # Convert to RGB
       def to_rgb
         rgb = hsl_to_rgb
-        require_relative 'rgb'
-        RGB.new(red: rgb[0], green: rgb[1], blue: rgb[2])
+        require_relative "rgb"
+        Unmagic::Color::RGB.new(red: rgb[0], green: rgb[1], blue: rgb[2])
       end
 
-
+      # Convert to OKLCH via RGB (placeholder)
+      def to_oklch
+        to_rgb.to_oklch
+      end
 
       def luminance
         to_rgb.luminance
@@ -98,88 +102,108 @@ module Unmagic
         other_hsl = other.respond_to?(:to_hsl) ? other.to_hsl : other
 
         # Blend in HSL space
-        new_hue = @hue * (1 - amount) + other_hsl.hue * amount
-        new_saturation = @saturation * (1 - amount) + other_hsl.saturation * amount
-        new_lightness = @lightness * (1 - amount) + other_hsl.lightness * amount
+        new_hue = @hue.value * (1 - amount) + other_hsl.hue * amount
+        new_saturation = @saturation.value * (1 - amount) + other_hsl.saturation * amount
+        new_lightness = @lightness.value * (1 - amount) + other_hsl.lightness * amount
 
-        HSL.new(hue: new_hue, saturation: new_saturation, lightness: new_lightness)
+        Unmagic::Color::HSL.new(hue: new_hue, saturation: new_saturation, lightness: new_lightness)
       end
 
       # Lighten by adjusting lightness
       def lighten(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
-        new_lightness = @lightness + (100 - @lightness) * amount
-        HSL.new(hue: @hue, saturation: @saturation, lightness: new_lightness)
+        new_lightness = @lightness.value + (100 - @lightness.value) * amount
+        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
       end
 
       # Darken by adjusting lightness
       def darken(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
-        new_lightness = @lightness * (1 - amount)
-        HSL.new(hue: @hue, saturation: @saturation, lightness: new_lightness)
+        new_lightness = @lightness.value * (1 - amount)
+        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
       end
 
-      # Determine if this is a light or dark color
-      def light?
-        luminance > 0.5
-      end
-
-      def dark?
-        !light?
-      end
-
-      # Get contrasting color (black or white)
-      def contrast_color
-        light? ? RGB.new(red: 0, green: 0, blue: 0) : RGB.new(red: 255, green: 255, blue: 255)
-      end
-
-      # Calculate WCAG contrast ratio with another color
-      def contrast_ratio(other)
-        other = Unmagic::Color.parse(other) if other.is_a?(String)
-        return 1.0 unless other
-
-        l1 = luminance
-        l2 = other.luminance
-
-        lighter = [ l1, l2 ].max
-        darker = [ l1, l2 ].min
-
-        (lighter + 0.05) / (darker + 0.05)
-      end
-
-      # Adjust this color to ensure sufficient contrast against a background
-      def adjust_for_contrast(background, target_ratio = 4.5)
-        background = Unmagic::Color.parse(background) if background.is_a?(String)
-        return self unless background
-
-        current_ratio = contrast_ratio(background)
-        return self if current_ratio >= target_ratio
-
-        # Adjust based on background lightness
-        if background.light?
-          darken(0.3)
-        else
-          lighten(0.3)
-        end
-      end
 
       def ==(other)
-        other.is_a?(HSL) &&
-          (@hue - other.hue).abs < 0.01 &&
-          (@saturation - other.saturation).abs < 0.01 &&
-          (@lightness - other.lightness).abs < 0.01
+        other.is_a?(Unmagic::Color::HSL) &&
+          (@hue.value - other.hue).abs < 0.01 &&
+          (@saturation.value - other.saturation).abs < 0.01 &&
+          (@lightness.value - other.lightness).abs < 0.01
+      end
+
+      # Generate a progression of colors by applying lightness/saturation transformations
+      #
+      # Examples:
+      #
+      #   # Using arrays (convenient for predefined values)
+      #   hsl.progression(steps: 7, lightness: [10, 20, 30, 40, 50, 60, 70])
+      #   hsl.progression(steps: 5, lightness: [20, 40, 60]) # uses 60 for steps 4-5
+      #   hsl.progression(steps: 3, lightness: [0, 50, 100], saturation: [80, 60, 40])
+      #
+      #   # Using procs for dynamic calculation
+      #   hsl.progression(steps: 7, lightness: ->(_hsl, _i) { 0 })   # all black
+      #   hsl.progression(steps: 7, lightness: ->(_hsl, _i) { 100 }) # all white
+      #
+      #   # Dynamic based on current lightness
+      #   hsl.progression(
+      #     steps: 7,
+      #     lightness: ->(hsl, _i) { hsl.lightness < 50 ? 90 : 10 }
+      #   )
+      #
+      #   # Complex progressions with step awareness
+      #   hsl.progression(
+      #     steps: 7,
+      #     lightness: ->(hsl, i) { hsl.lightness + (i * 10) },
+      #     saturation: ->(hsl, i) { i < 4 ? hsl.saturation : hsl.saturation - 5 }
+      #   )
+      #
+      def progression(steps:, lightness:, saturation: nil)
+        raise ArgumentError, "steps must be at least 1" if steps < 1
+        raise ArgumentError, "lightness must be a proc or array" unless lightness.respond_to?(:call) || lightness.is_a?(Array)
+        raise ArgumentError, "saturation must be a proc or array" if saturation && !saturation.respond_to?(:call) && !saturation.is_a?(Array)
+
+        colors = []
+
+        (0...steps).each do |i|
+          # Calculate new lightness using the provided proc or array
+          new_lightness = if lightness.is_a?(Array)
+            # Use array value at index i, or last value if beyond array length
+            lightness[i] || lightness.last
+          else
+            lightness.call(self, i)
+          end
+          new_lightness = new_lightness.to_f.clamp(0, 100)
+
+          # Calculate new saturation using the provided proc/array or keep current
+          new_saturation = if saturation
+            if saturation.is_a?(Array)
+              # Use array value at index i, or last value if beyond array length
+              (saturation[i] || saturation.last).to_f.clamp(0, 100)
+            else
+              saturation.call(self, i).to_f.clamp(0, 100)
+            end
+          else
+            @saturation.value
+          end
+
+          # Create new HSL color with computed values
+          color = self.class.new(hue: @hue.value, saturation: new_saturation, lightness: new_lightness)
+          colors << color
+        end
+
+        colors
       end
 
       def to_s
-        "hsl(#{@hue.round}, #{@saturation.round}%, #{@lightness.round}%)"
+        "hsl(#{@hue.value.round}, #{@saturation}%, #{@lightness}%)"
       end
 
       private
 
       def hsl_to_rgb
-        h = @hue / 360.0
-        s = @saturation / 100.0  # Convert percentage to 0-1
-        l = @lightness / 100.0 # Convert percentage to 0-1
+        h = @hue.value / 360.0
+        s = @saturation.to_ratio  # Convert percentage to 0-1
+        l = @lightness.to_ratio # Convert percentage to 0-1
 
         if s == 0
           # Achromatic
