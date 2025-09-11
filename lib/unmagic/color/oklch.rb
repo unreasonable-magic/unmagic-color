@@ -7,12 +7,6 @@ module Unmagic
 
         attr_reader :lightness, :chroma, :hue
 
-        def self.valid?(value)
-          parse(value)
-          true
-        rescue ParseError
-          false
-        end
 
         def initialize(lightness:, chroma:, hue:)
           @lightness = Color::Lightness.new(lightness * 100) # Convert 0-1 to percentage
@@ -70,11 +64,12 @@ module Unmagic
           new(lightness: l, chroma: c, hue: h)
         end
 
-        # Factory: deterministic OKLCH from text
-        # Produces stable colors across sessions. Tweak ranges to taste.
-        def self.from_text(text, lightness: 0.58, chroma_range: (0.10..0.18), hue_spread: 997, hue_base: 137.508)
-          seed = (text || "").to_s.downcase.strip
-          h32  = fnv1a32(seed)
+        # Factory: deterministic OKLCH from integer seed
+        # Produces stable colors from hash function output. Tweak ranges to taste.
+        def self.derive(seed, lightness: 0.58, chroma_range: (0.10..0.18), hue_spread: 997, hue_base: 137.508)
+          raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
+          
+          h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
           # Hue: golden-angle style distribution to avoid clusters
           h = (hue_base * (h32 % hue_spread)) % 360
@@ -193,15 +188,6 @@ module Unmagic
           [ [ x, 0.0 ].max, 1.0 ].min
         end
 
-        # Tiny FNV-1a 32-bit hash—portable & deterministic
-        def self.fnv1a32(str)
-          h = 0x811C9DC5
-          str.each_byte do |b|
-            h ^= b
-            h = (h * 0x01000193) & 0xFFFFFFFF
-          end
-          h
-      end
     end
   end
 end

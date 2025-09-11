@@ -3,42 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe Unmagic::Color::OKLCH do
-  describe '.valid?' do
-    it 'validates OKLCH with parentheses' do
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15 180)')).to be true
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.0 0.0 0)')).to be true
-      expect(Unmagic::Color::OKLCH.valid?('oklch(1.0 0.4 359)')).to be true
-    end
-
-    it 'validates OKLCH without parentheses' do
-      expect(Unmagic::Color::OKLCH.valid?('0.58 0.15 180')).to be true
-      expect(Unmagic::Color::OKLCH.valid?('0.0 0.0 0')).to be true
-      expect(Unmagic::Color::OKLCH.valid?('1.0 0.4 359')).to be true
-    end
-
-    it 'validates OKLCH with decimal values' do
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15 180.5)')).to be true
-      expect(Unmagic::Color::OKLCH.valid?('0.75 0.25 45.2')).to be true
-    end
-
-    it 'rejects values outside valid ranges' do
-      expect(Unmagic::Color::OKLCH.valid?('oklch(1.1 0.15 180)')).to be false  # lightness > 1
-      expect(Unmagic::Color::OKLCH.valid?('oklch(-0.1 0.15 180)')).to be false # lightness < 0
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.6 180)')).to be false  # chroma > 0.5
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 -0.1 180)')).to be false # chroma < 0
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15 360)')).to be false # hue >= 360
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15 -1)')).to be false  # hue < 0
-    end
-
-    it 'rejects invalid formats' do
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15)')).to be false # Only 2 values
-      expect(Unmagic::Color::OKLCH.valid?('oklch(0.58 0.15 180 1)')).to be false # Too many values
-      expect(Unmagic::Color::OKLCH.valid?('oklch(light chroma hue)')).to be false # Not numbers
-      expect(Unmagic::Color::OKLCH.valid?('')).to be false
-      expect(Unmagic::Color::OKLCH.valid?(nil)).to be false
-      expect(Unmagic::Color::OKLCH.valid?(123)).to be false
-    end
-  end
 
   describe '.parse' do
     it 'parses OKLCH with parentheses' do
@@ -80,25 +44,30 @@ RSpec.describe Unmagic::Color::OKLCH do
     end
   end
 
-  describe '.from_text' do
-    it 'generates consistent colors from text' do
-      color1 = Unmagic::Color::OKLCH.from_text('keith')
-      color2 = Unmagic::Color::OKLCH.from_text('keith')
+  describe '.derive' do
+    it 'generates consistent colors from integer seeds' do
+      color1 = Unmagic::Color::OKLCH.derive(12345)
+      color2 = Unmagic::Color::OKLCH.derive(12345)
       expect(color1.lightness).to eq(color2.lightness)
       expect(color1.chroma).to eq(color2.chroma)
       expect(color1.hue).to eq(color2.hue)
     end
 
-    it 'generates different colors for different text' do
-      color1 = Unmagic::Color::OKLCH.from_text('keith')
-      color2 = Unmagic::Color::OKLCH.from_text('owen')
+    it 'generates different colors for different seeds' do
+      color1 = Unmagic::Color::OKLCH.derive(12345)
+      color2 = Unmagic::Color::OKLCH.derive(54321)
       expect(color1).not_to eq(color2)
     end
 
     it 'respects custom parameters' do
-      color = Unmagic::Color::OKLCH.from_text('test', lightness: 0.7, chroma_range: (0.20..0.30))
+      color = Unmagic::Color::OKLCH.derive(12345, lightness: 0.7, chroma_range: (0.20..0.30))
       expect(color.lightness).to eq(0.7)
       expect(color.chroma).to be_between(0.20, 0.30)
+    end
+
+    it 'raises error for non-integer seeds' do
+      expect { Unmagic::Color::OKLCH.derive("not_integer") }.to raise_error(ArgumentError, "Seed must be an integer")
+      expect { Unmagic::Color::OKLCH.derive(3.14) }.to raise_error(ArgumentError, "Seed must be an integer")
     end
   end
 

@@ -3,54 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe Unmagic::Color::HSL do
-  describe '.valid?' do
-    it 'validates HSL with parentheses' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50%, 50%)')).to be true
-      expect(Unmagic::Color::HSL.valid?('hsl(0, 0%, 0%)')).to be true
-      expect(Unmagic::Color::HSL.valid?('hsl(360, 100%, 100%)')).to be true
-    end
-
-    it 'validates HSL without parentheses' do
-      expect(Unmagic::Color::HSL.valid?('180, 50%, 50%')).to be true
-      expect(Unmagic::Color::HSL.valid?('0, 0%, 0%')).to be true
-      expect(Unmagic::Color::HSL.valid?('360, 100%, 100%')).to be true
-    end
-
-    it 'validates HSL without percent signs' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50, 50)')).to be true
-      expect(Unmagic::Color::HSL.valid?('180, 50, 50')).to be true
-    end
-
-    it 'validates HSL with decimals' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180.5, 50.5%, 50.5%)')).to be true
-      expect(Unmagic::Color::HSL.valid?('180.5, 50.5, 50.5')).to be true
-    end
-
-    it 'rejects invalid hue values' do
-      expect(Unmagic::Color::HSL.valid?('hsl(361, 50%, 50%)')).to be false  # > 360
-      expect(Unmagic::Color::HSL.valid?('hsl(-1, 50%, 50%)')).to be false   # < 0
-    end
-
-    it 'rejects invalid saturation values' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 101%, 50%)')).to be false  # > 100
-      expect(Unmagic::Color::HSL.valid?('hsl(180, -1%, 50%)')).to be false   # < 0
-    end
-
-    it 'rejects invalid lightness values' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50%, 101%)')).to be false  # > 100
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50%, -1%)')).to be false   # < 0
-    end
-
-    it 'rejects invalid formats' do
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50%)')).to be false # Only 2 values
-      expect(Unmagic::Color::HSL.valid?('hsl(180, 50%, 50%, 1)')).to be false  # Too many values
-      expect(Unmagic::Color::HSL.valid?('hsl(red, green, blue)')).to be false  # Not numbers
-      expect(Unmagic::Color::HSL.valid?('180 50 50')).to be false # No commas
-      expect(Unmagic::Color::HSL.valid?('')).to be false
-      expect(Unmagic::Color::HSL.valid?(nil)).to be false
-      expect(Unmagic::Color::HSL.valid?(123)).to be false
-    end
-  end
 
   describe '.parse' do
     it 'parses HSL with parentheses and percents' do
@@ -140,6 +92,33 @@ RSpec.describe Unmagic::Color::HSL do
       expect { Unmagic::Color::HSL.parse('') }.to raise_error(Unmagic::Color::HSL::ParseError)
       expect { Unmagic::Color::HSL.parse(nil) }.to raise_error(Unmagic::Color::HSL::ParseError)
       expect { Unmagic::Color::HSL.parse(123) }.to raise_error(Unmagic::Color::HSL::ParseError)
+    end
+  end
+
+  describe '.derive' do
+    it 'generates consistent colors from integer seeds' do
+      color1 = Unmagic::Color::HSL.derive(12345)
+      color2 = Unmagic::Color::HSL.derive(12345)
+      expect(color1.hue).to eq(color2.hue)
+      expect(color1.saturation).to eq(color2.saturation)
+      expect(color1.lightness).to eq(color2.lightness)
+    end
+
+    it 'generates different colors for different seeds' do
+      color1 = Unmagic::Color::HSL.derive(12345)
+      color2 = Unmagic::Color::HSL.derive(54321)
+      expect(color1).not_to eq(color2)
+    end
+
+    it 'respects custom parameters' do
+      color = Unmagic::Color::HSL.derive(12345, lightness: 70, saturation_range: (20..40))
+      expect(color.lightness).to eq(70)
+      expect(color.saturation).to be_between(20, 40)
+    end
+
+    it 'raises error for non-integer seeds' do
+      expect { Unmagic::Color::HSL.derive("not_integer") }.to raise_error(ArgumentError, "Seed must be an integer")
+      expect { Unmagic::Color::HSL.derive(3.14) }.to raise_error(ArgumentError, "Seed must be an integer")
     end
   end
 

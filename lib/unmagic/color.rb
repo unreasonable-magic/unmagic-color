@@ -11,6 +11,7 @@ module Unmagic
     require_relative "color/rgb/hex"
     require_relative "color/hsl"
     require_relative "color/oklch"
+    require_relative "color/string/hash_function"
 
     class << self
       def parse(input)
@@ -40,14 +41,14 @@ module Unmagic
     # Base unit for RGB components (0-255)
     Component = Data.define(:value) do
       include Comparable
-      
+
       def initialize(value:)
         super(value: value.to_i.clamp(0, 255))
       end
 
       def to_i = value
       def to_f = value.to_f
-      
+
       def <=>(other)
         case other
         when Component, Numeric
@@ -86,14 +87,14 @@ module Unmagic
     # Angular unit for hue (0-360 degrees, wrapping)
     Hue = Data.define(:value) do
       include Comparable
-      
+
       def initialize(value:)
         super(value: value.to_f % 360)
       end
 
       def to_f = value
       def degrees = value
-      
+
       def <=>(other)
         case other
         when Hue, Numeric
@@ -128,13 +129,13 @@ module Unmagic
     # OKLCH chroma unit (0-0.5)
     Chroma = Data.define(:value) do
       include Comparable
-      
+
       def initialize(value:)
         super(value: value.to_f.clamp(0, 0.5))
       end
 
       def to_f = value
-      
+
       def <=>(other)
         case other
         when Chroma, Numeric

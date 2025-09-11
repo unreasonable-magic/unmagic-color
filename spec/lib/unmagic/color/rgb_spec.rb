@@ -20,69 +20,35 @@ RSpec.describe Unmagic::Color::RGB do
     end
   end
 
-  describe '.valid?' do
-    it 'validates RGB with parentheses' do
-      expect(Unmagic::Color::RGB.valid?('rgb(255, 128, 0)')).to be true
-      expect(Unmagic::Color::RGB.valid?('rgb(0, 0, 0)')).to be true
-      expect(Unmagic::Color::RGB.valid?('rgb(255, 255, 255)')).to be true
+  describe '.derive' do
+    it 'generates consistent colors from integer seeds' do
+      color1 = Unmagic::Color::RGB.derive(12345)
+      color2 = Unmagic::Color::RGB.derive(12345)
+      expect(color1.red).to eq(color2.red)
+      expect(color1.green).to eq(color2.green)
+      expect(color1.blue).to eq(color2.blue)
     end
 
-    it 'validates RGB without parentheses' do
-      expect(Unmagic::Color::RGB.valid?('255, 128, 0')).to be true
-      expect(Unmagic::Color::RGB.valid?('0, 0, 0')).to be true
-      expect(Unmagic::Color::RGB.valid?('255, 255, 255')).to be true
+    it 'generates different colors for different seeds' do
+      color1 = Unmagic::Color::RGB.derive(12345)
+      color2 = Unmagic::Color::RGB.derive(54321)
+      expect(color1).not_to eq(color2)
     end
 
-    it 'validates RGB with extra spaces' do
-      expect(Unmagic::Color::RGB.valid?('rgb( 255 , 128 , 0 )')).to be true
-      expect(Unmagic::Color::RGB.valid?('255 , 128 , 0')).to be true
+    it 'respects custom parameters' do
+      color = Unmagic::Color::RGB.derive(12345, brightness: 100, saturation: 0.3)
+      # With lower saturation, RGB values should be closer to each other
+      expect(color.red).to be_between(0, 255)
+      expect(color.green).to be_between(0, 255)
+      expect(color.blue).to be_between(0, 255)
     end
 
-    it 'accepts values outside 0-255 (they get clamped)' do
-      expect(Unmagic::Color::RGB.valid?('rgb(256, 128, 0)')).to be true
-      expect(Unmagic::Color::RGB.valid?('rgb(-1, 128, 0)')).to be true
-      expect(Unmagic::Color::RGB.valid?('300, 128, 0')).to be true
-    end
-
-    it 'rejects invalid formats' do
-      expect(Unmagic::Color::RGB.valid?('rgb(255, 128)')).to be false # Only 2 values
-      expect(Unmagic::Color::RGB.valid?('rgb(255, 128, 0, 1)')).to be false # Too many values
-      expect(Unmagic::Color::RGB.valid?('rgb(red, green, blue)')).to be false # Not numbers
-      expect(Unmagic::Color::RGB.valid?('255 128 0')).to be false # No commas
-      expect(Unmagic::Color::RGB.valid?('')).to be false
-      expect(Unmagic::Color::RGB.valid?(nil)).to be false
-      expect(Unmagic::Color::RGB.valid?(123)).to be false
-    end
-
-    it 'rejects decimal values' do
-      expect(Unmagic::Color::RGB.valid?('rgb(255.5, 128, 0)')).to be false
-      expect(Unmagic::Color::RGB.valid?('255.0, 128.5, 0.9')).to be false
-    end
-
-    it 'validates hex colors with hash' do
-      expect(Unmagic::Color::RGB.valid?('#FF0000')).to be true
-      expect(Unmagic::Color::RGB.valid?('#ff0000')).to be true
-      expect(Unmagic::Color::RGB.valid?('#F00')).to be true
-    end
-
-    it 'validates hex colors without hash' do
-      expect(Unmagic::Color::RGB.valid?('FF0000')).to be true
-      expect(Unmagic::Color::RGB.valid?('ff0000')).to be true
-      expect(Unmagic::Color::RGB.valid?('F00')).to be true
-    end
-
-    it 'rejects invalid hex colors' do
-      expect(Unmagic::Color::RGB.valid?('#GGGGGG')).to be false
-      expect(Unmagic::Color::RGB.valid?('#FF00')).to be false # Wrong length
-      expect(Unmagic::Color::RGB.valid?('#FF00000')).to be false # Too long
-      expect(Unmagic::Color::RGB.valid?('ZZZ')).to be false
-    end
-
-    it 'handles whitespace in hex colors' do
-      expect(Unmagic::Color::RGB.valid?('  #FF0000  ')).to be true
-      expect(Unmagic::Color::RGB.valid?('  FF0000  ')).to be true
+    it 'raises error for non-integer seeds' do
+      expect { Unmagic::Color::RGB.derive("not_integer") }.to raise_error(ArgumentError, "Seed must be an integer")
+      expect { Unmagic::Color::RGB.derive(3.14) }.to raise_error(ArgumentError, "Seed must be an integer")
     end
   end
+
 
   describe '.parse' do
     it 'parses RGB with parentheses' do

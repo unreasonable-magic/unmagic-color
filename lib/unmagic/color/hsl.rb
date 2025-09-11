@@ -7,12 +7,6 @@ module Unmagic
 
       attr_reader :hue, :saturation, :lightness
 
-      def self.valid?(value)
-        parse(value)
-        true
-      rescue ParseError
-        false
-      end
 
       def initialize(hue:, saturation:, lightness:)
         @hue = Color::Hue.new(value: hue)
@@ -47,11 +41,11 @@ module Unmagic
         # Check if saturation and lightness are numeric (with optional %)
         s_str = parts[1].gsub("%", "").strip
         l_str = parts[2].gsub("%", "").strip
-        
+
         unless s_str.match?(/\A\d+(\.\d+)?\z/)
           raise ParseError.new("Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)")
         end
-        
+
         unless l_str.match?(/\A\d+(\.\d+)?\z/)
           raise ParseError.new("Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)")
         end
@@ -64,16 +58,32 @@ module Unmagic
         unless h >= 0 && h <= 360
           raise ParseError.new("Hue must be between 0 and 360, got #{h}")
         end
-        
+
         unless s >= 0 && s <= 100
           raise ParseError.new("Saturation must be between 0 and 100, got #{s}")
         end
-        
+
         unless l >= 0 && l <= 100
           raise ParseError.new("Lightness must be between 0 and 100, got #{l}")
         end
 
         new(hue: h, saturation: s, lightness: l)
+      end
+
+      # Factory: deterministic HSL from integer seed
+      # Produces stable colors from hash function output.
+      def self.derive(seed, lightness: 50, saturation_range: (40..80))
+        raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
+        
+        h32 = seed & 0xFFFFFFFF # Ensure 32-bit
+
+        # Hue: distribute evenly across the color wheel
+        h = (h32 % 360).to_f
+
+        # Saturation: map a byte into the provided range
+        s = saturation_range.begin + ((h32 >> 8) & 0xFF) / 255.0 * (saturation_range.end - saturation_range.begin)
+
+        new(hue: h, saturation: s, lightness: lightness)
       end
 
       def to_hsl

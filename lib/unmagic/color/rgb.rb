@@ -19,13 +19,6 @@ module Unmagic
       def green = @green
       def blue = @blue
 
-      # Check if a string is a valid RGB color (rgb format or hex format)
-      def self.valid?(value)
-        parse(value)
-        true
-      rescue ParseError, Hex::ParseError
-        false
-      end
 
       private
 
@@ -46,6 +39,38 @@ module Unmagic
 
         # Try to parse as RGB format
         parse_rgb_format(input)
+      end
+
+      # Factory: deterministic RGB from integer seed
+      # Produces stable colors from hash function output.
+      def self.derive(seed, brightness: 180, saturation: 0.7)
+        raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
+        
+        h32 = seed & 0xFFFFFFFF # Ensure 32-bit
+
+        # Extract RGB components from different parts of the hash
+        r_base = (h32 & 0xFF)
+        g_base = ((h32 >> 8) & 0xFF) 
+        b_base = ((h32 >> 16) & 0xFF)
+
+        # Apply brightness and saturation adjustments
+        # Brightness controls the average RGB value
+        # Saturation controls how much the channels differ from each other
+        
+        avg = (r_base + g_base + b_base) / 3.0
+        
+        # Adjust each channel relative to average
+        r = avg + (r_base - avg) * saturation
+        g = avg + (g_base - avg) * saturation  
+        b = avg + (b_base - avg) * saturation
+        
+        # Scale to target brightness
+        scale = brightness / 127.5 # 127.5 is middle of 0-255
+        r = (r * scale).clamp(0, 255).round
+        g = (g * scale).clamp(0, 255).round
+        b = (b * scale).clamp(0, 255).round
+
+        new(red: r, green: g, blue: b)
       end
 
       private
