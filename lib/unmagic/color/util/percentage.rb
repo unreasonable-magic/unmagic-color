@@ -44,7 +44,7 @@ module Unmagic
         end
 
         # Clamp to valid percentage range
-        @value = [[0.0, @value].max, 100.0].min
+        @value = @value.clamp(0.0, 100.0)
       end
 
       # Format as percentage string with configurable decimal places

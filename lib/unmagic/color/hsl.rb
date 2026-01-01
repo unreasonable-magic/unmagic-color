@@ -8,81 +8,79 @@ module Unmagic
       attr_reader :hue, :saturation, :lightness
 
       def initialize(hue:, saturation:, lightness:)
+        super()
         @hue = Color::Hue.new(value: hue)
         @saturation = Color::Saturation.new(saturation)
         @lightness = Color::Lightness.new(lightness)
       end
 
-      # Return unit instances directly
-      attr_reader :hue
-      attr_reader :saturation
-      attr_reader :lightness
+      class << self
+        # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
+        def parse(input)
+          raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
-      # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
-      def self.parse(input)
-        raise ParseError, "Input must be a string" unless input.is_a?(::String)
+          # Remove hsl() wrapper if present
+          clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
 
-        # Remove hsl() wrapper if present
-        clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
+          # Split and parse values
+          parts = clean.split(/\s*,\s*/)
+          unless parts.length == 3
+            raise ParseError, "Expected 3 HSL values, got #{parts.length}"
+          end
 
-        # Split and parse values
-        parts = clean.split(/\s*,\s*/)
-        unless parts.length == 3
-          raise ParseError, "Expected 3 HSL values, got #{parts.length}"
+          # Check if hue is numeric
+          h_str = parts[0].strip
+          unless h_str.match?(/\A\d+(\.\d+)?\z/)
+            raise ParseError, "Invalid hue value: #{h_str.inspect} (must be a number)"
+          end
+
+          # Check if saturation and lightness are numeric (with optional %)
+          s_str = parts[1].gsub("%", "").strip
+          l_str = parts[2].gsub("%", "").strip
+
+          unless s_str.match?(/\A\d+(\.\d+)?\z/)
+            raise ParseError, "Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)"
+          end
+
+          unless l_str.match?(/\A\d+(\.\d+)?\z/)
+            raise ParseError, "Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)"
+          end
+
+          h = h_str.to_f
+          s = s_str.to_f
+          l = l_str.to_f
+
+          # Validate ranges
+          if h < 0 || h > 360
+            raise ParseError, "Hue must be between 0 and 360, got #{h}"
+          end
+
+          if s < 0 || s > 100
+            raise ParseError, "Saturation must be between 0 and 100, got #{s}"
+          end
+
+          if l < 0 || l > 100
+            raise ParseError, "Lightness must be between 0 and 100, got #{l}"
+          end
+
+          new(hue: h, saturation: s, lightness: l)
         end
 
-        # Check if hue is numeric
-        h_str = parts[0].strip
-        unless h_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError, "Invalid hue value: #{h_str.inspect} (must be a number)"
+        # Factory: deterministic HSL from integer seed
+        # Produces stable colors from hash function output.
+        def derive(seed, lightness: 50, saturation_range: (40..80))
+          raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
+
+          h32 = seed & 0xFFFFFFFF # Ensure 32-bit
+
+          # Hue: distribute evenly across the color wheel
+          h = (h32 % 360).to_f
+
+          # Saturation: map a byte into the provided range
+          s = saturation_range.begin + ((h32 >> 8) & 0xFF) / 255.0 * (saturation_range.end - saturation_range.begin)
+
+          new(hue: h, saturation: s, lightness: lightness)
         end
-
-        # Check if saturation and lightness are numeric (with optional %)
-        s_str = parts[1].gsub("%", "").strip
-        l_str = parts[2].gsub("%", "").strip
-
-        unless s_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError, "Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)"
-        end
-
-        unless l_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError, "Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)"
-        end
-
-        h = h_str.to_f
-        s = s_str.to_f
-        l = l_str.to_f
-
-        # Validate ranges
-        if h < 0 || h > 360
-          raise ParseError, "Hue must be between 0 and 360, got #{h}"
-        end
-
-        if s < 0 || s > 100
-          raise ParseError, "Saturation must be between 0 and 100, got #{s}"
-        end
-
-        if l < 0 || l > 100
-          raise ParseError, "Lightness must be between 0 and 100, got #{l}"
-        end
-
-        new(hue: h, saturation: s, lightness: l)
-      end
-
-      # Factory: deterministic HSL from integer seed
-      # Produces stable colors from hash function output.
-      def self.derive(seed, lightness: 50, saturation_range: (40..80))
-        raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
-
-        h32 = seed & 0xFFFFFFFF # Ensure 32-bit
-
-        # Hue: distribute evenly across the color wheel
-        h = (h32 % 360).to_f
-
-        # Saturation: map a byte into the provided range
-        s = saturation_range.begin + ((h32 >> 8) & 0xFF) / 255.0 * (saturation_range.end - saturation_range.begin)
-
-        new(hue: h, saturation: s, lightness: lightness)
       end
 
       def to_hsl

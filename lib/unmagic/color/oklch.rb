@@ -5,78 +5,79 @@ module Unmagic
     class OKLCH < Color
       class ParseError < Color::Error; end
 
-      attr_reader :lightness, :chroma, :hue
+      attr_reader :chroma, :hue
 
       def initialize(lightness:, chroma:, hue:)
+        super()
         @lightness = Color::Lightness.new(lightness * 100) # Convert 0-1 to percentage
         @chroma = Color::Chroma.new(value: chroma)
         @hue = Color::Hue.new(value: hue)
       end
 
-      # Return unit instances directly, but lightness as ratio for OKLCH
+      # Return lightness as ratio for OKLCH (overrides attr_reader)
       def lightness = @lightness.to_ratio
-      attr_reader :chroma
-      attr_reader :hue
 
       # Helper method for working with lightness in percentage form
       def lightness_percentage = @lightness.value
 
-      # Parse OKLCH string like "oklch(0.58 0.15 180)" or "0.58 0.15 180"
-      def self.parse(input)
-        raise ParseError, "Input must be a string" unless input.is_a?(::String)
+      class << self
+        # Parse OKLCH string like "oklch(0.58 0.15 180)" or "0.58 0.15 180"
+        def parse(input)
+          raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
-        # Remove oklch() wrapper if present
-        clean = input.gsub(/^oklch\s*\(\s*|\s*\)$/, "").strip
+          # Remove oklch() wrapper if present
+          clean = input.gsub(/^oklch\s*\(\s*|\s*\)$/, "").strip
 
-        # Split values
-        parts = clean.split(/\s+/)
-        unless parts.length == 3
-          raise ParseError, "Expected 3 OKLCH values, got #{parts.length}"
-        end
-
-        # Check if all values are numeric
-        parts.each_with_index do |v, i|
-          unless v.match?(/\A\d+(\.\d+)?\z/)
-            component = ["lightness", "chroma", "hue"][i]
-            raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
+          # Split values
+          parts = clean.split(/\s+/)
+          unless parts.length == 3
+            raise ParseError, "Expected 3 OKLCH values, got #{parts.length}"
           end
+
+          # Check if all values are numeric
+          parts.each_with_index do |v, i|
+            unless v.match?(/\A\d+(\.\d+)?\z/)
+              component = ["lightness", "chroma", "hue"][i]
+              raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
+            end
+          end
+
+          # Convert to floats
+          l = parts[0].to_f
+          c = parts[1].to_f
+          h = parts[2].to_f
+
+          # Validate ranges
+          if l < 0 || l > 1
+            raise ParseError, "Lightness must be between 0 and 1, got #{l}"
+          end
+
+          if c < 0 || c > 0.5
+            raise ParseError, "Chroma must be between 0 and 0.5, got #{c}"
+          end
+
+          if h < 0 || h >= 360
+            raise ParseError, "Hue must be between 0 and 360, got #{h}"
+          end
+
+          new(lightness: l, chroma: c, hue: h)
         end
 
-        # Convert to floats
-        l = parts[0].to_f
-        c = parts[1].to_f
-        h = parts[2].to_f
+        # Factory: deterministic OKLCH from integer seed
+        # Produces stable colors from hash function output. Tweak ranges to taste.
+        def derive(seed, lightness: 0.58, chroma_range: (0.10..0.18), hue_spread: 997, hue_base: 137.508)
+          raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
 
-        # Validate ranges
-        if l < 0 || l > 1
-          raise ParseError, "Lightness must be between 0 and 1, got #{l}"
+          h32 = seed & 0xFFFFFFFF # Ensure 32-bit
+
+          # Hue: golden-angle style distribution to avoid clusters
+          h = (hue_base * (h32 % hue_spread)) % 360
+
+          # Chroma: map a byte into a safe text-friendly range
+          c = chroma_range.begin + ((h32 >> 8) & 0xFF) / 255.0 * (chroma_range.end - chroma_range.begin)
+
+          new(lightness: lightness, chroma: c, hue: h)
         end
-
-        if c < 0 || c > 0.5
-          raise ParseError, "Chroma must be between 0 and 0.5, got #{c}"
-        end
-
-        if h < 0 || h >= 360
-          raise ParseError, "Hue must be between 0 and 360, got #{h}"
-        end
-
-        new(lightness: l, chroma: c, hue: h)
-      end
-
-      # Factory: deterministic OKLCH from integer seed
-      # Produces stable colors from hash function output. Tweak ranges to taste.
-      def self.derive(seed, lightness: 0.58, chroma_range: (0.10..0.18), hue_spread: 997, hue_base: 137.508)
-        raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
-
-        h32 = seed & 0xFFFFFFFF # Ensure 32-bit
-
-        # Hue: golden-angle style distribution to avoid clusters
-        h = (hue_base * (h32 % hue_spread)) % 360
-
-        # Chroma: map a byte into a safe text-friendly range
-        c = chroma_range.begin + ((h32 >> 8) & 0xFF) / 255.0 * (chroma_range.end - chroma_range.begin)
-
-        new(lightness: lightness, chroma: c, hue: h)
       end
 
       # Convert to OKLCH representation (returns self)
@@ -183,7 +184,7 @@ module Unmagic
       private
 
       def clamp01(x)
-        [[x, 0.0].max, 1.0].min
+        x.clamp(0.0, 1.0)
       end
     end
   end

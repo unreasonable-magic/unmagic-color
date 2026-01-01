@@ -219,22 +219,24 @@ module Unmagic
         # Default algorithm - BKDR for its excellent distribution
         DEFAULT = BKDR
 
-        def self.call(str)
-          DEFAULT.call(str)
-        end
+        class << self
+          def call(str)
+            DEFAULT.call(str)
+          end
 
-        # Get all available algorithms
-        def self.all
-          constants.select { |c| const_get(c).is_a?(Proc) }
-            .map { |c| [c.to_s.downcase.to_sym, const_get(c)] }
-            .to_h
-        end
+          # Get all available algorithms
+          def all
+            constants.select { |c| const_get(c).is_a?(Proc) }
+              .map { |c| [c.to_s.downcase.to_sym, const_get(c)] }
+              .to_h
+          end
 
-        # Get a hash function by name
-        def self.[](name)
-          const_get(name.to_s.upcase)
-        rescue NameError
-          raise ArgumentError, "Unknown hash function: #{name}"
+          # Get a hash function by name
+          def [](name)
+            const_get(name.to_s.upcase)
+          rescue NameError
+            raise ArgumentError, "Unknown hash function: #{name}"
+          end
         end
       end
     end

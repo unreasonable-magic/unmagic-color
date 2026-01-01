@@ -9,86 +9,84 @@ module Unmagic
       attr_reader :red, :green, :blue
 
       def initialize(red:, green:, blue:)
+        super()
         @red = Color::Red.new(value: red)
         @green = Color::Green.new(value: green)
         @blue = Color::Blue.new(value: blue)
       end
 
-      # Return unit instances directly
-      attr_reader :red
-      attr_reader :green
-      attr_reader :blue
+      class << self
+        # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0" or hex like "#FF8800" or "FF8800"
+        def parse(input)
+          raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
-      # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0" or hex like "#FF8800" or "FF8800"
-      def self.parse(input)
-        raise ParseError, "Input must be a string" unless input.is_a?(::String)
+          input = input.strip
 
-        input = input.strip
-
-        # Check if it looks like a hex color (starts with # or only contains hex digits)
-        if input.start_with?("#") || input.match?(/\A[0-9A-Fa-f]{3,6}\z/)
-          return Hex.parse(input)
-        end
-
-        # Try to parse as RGB format
-        parse_rgb_format(input)
-      end
-
-      # Factory: deterministic RGB from integer seed
-      # Produces stable colors from hash function output.
-      def self.derive(seed, brightness: 180, saturation: 0.7)
-        raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
-
-        h32 = seed & 0xFFFFFFFF # Ensure 32-bit
-
-        # Extract RGB components from different parts of the hash
-        r_base = (h32 & 0xFF)
-        g_base = ((h32 >> 8) & 0xFF)
-        b_base = ((h32 >> 16) & 0xFF)
-
-        # Apply brightness and saturation adjustments
-        # Brightness controls the average RGB value
-        # Saturation controls how much the channels differ from each other
-
-        avg = (r_base + g_base + b_base) / 3.0
-
-        # Adjust each channel relative to average
-        r = avg + (r_base - avg) * saturation
-        g = avg + (g_base - avg) * saturation
-        b = avg + (b_base - avg) * saturation
-
-        # Scale to target brightness
-        scale = brightness / 127.5 # 127.5 is middle of 0-255
-        r = (r * scale).clamp(0, 255).round
-        g = (g * scale).clamp(0, 255).round
-        b = (b * scale).clamp(0, 255).round
-
-        new(red: r, green: g, blue: b)
-      end
-
-      # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
-      def self.parse_rgb_format(input)
-        # Remove rgb() wrapper if present
-        clean = input.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
-
-        # Split values
-        values = clean.split(/\s*,\s*/)
-        unless values.length == 3
-          raise ParseError, "Expected 3 RGB values, got #{values.length}"
-        end
-
-        # Check if all values are numeric (allow negative for clamping)
-        values.each_with_index do |v, i|
-          unless v.match?(/\A-?\d+\z/)
-            component = ["red", "green", "blue"][i]
-            raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
+          # Check if it looks like a hex color (starts with # or only contains hex digits)
+          if input.start_with?("#") || input.match?(/\A[0-9A-Fa-f]{3,6}\z/)
+            return Hex.parse(input)
           end
+
+          # Try to parse as RGB format
+          parse_rgb_format(input)
         end
 
-        # Convert to integers (constructor will clamp)
-        parsed = values.map(&:to_i)
+        # Factory: deterministic RGB from integer seed
+        # Produces stable colors from hash function output.
+        def derive(seed, brightness: 180, saturation: 0.7)
+          raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
 
-        new(red: parsed[0], green: parsed[1], blue: parsed[2])
+          h32 = seed & 0xFFFFFFFF # Ensure 32-bit
+
+          # Extract RGB components from different parts of the hash
+          r_base = (h32 & 0xFF)
+          g_base = ((h32 >> 8) & 0xFF)
+          b_base = ((h32 >> 16) & 0xFF)
+
+          # Apply brightness and saturation adjustments
+          # Brightness controls the average RGB value
+          # Saturation controls how much the channels differ from each other
+
+          avg = (r_base + g_base + b_base) / 3.0
+
+          # Adjust each channel relative to average
+          r = avg + (r_base - avg) * saturation
+          g = avg + (g_base - avg) * saturation
+          b = avg + (b_base - avg) * saturation
+
+          # Scale to target brightness
+          scale = brightness / 127.5 # 127.5 is middle of 0-255
+          r = (r * scale).clamp(0, 255).round
+          g = (g * scale).clamp(0, 255).round
+          b = (b * scale).clamp(0, 255).round
+
+          new(red: r, green: g, blue: b)
+        end
+
+        # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
+        def parse_rgb_format(input)
+          # Remove rgb() wrapper if present
+          clean = input.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
+
+          # Split values
+          values = clean.split(/\s*,\s*/)
+          unless values.length == 3
+            raise ParseError, "Expected 3 RGB values, got #{values.length}"
+          end
+
+          # Check if all values are numeric (allow negative for clamping)
+          values.each_with_index do |v, i|
+            unless v.match?(/\A-?\d+\z/)
+              component = ["red", "green", "blue"][i]
+              raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
+            end
+          end
+
+          # Convert to integers (constructor will clamp)
+          parsed = values.map(&:to_i)
+
+          new(red: parsed[0], green: parsed[1], blue: parsed[2])
+        end
       end
 
       # Convert to RGB representation (returns self)
