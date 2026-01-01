@@ -107,6 +107,11 @@ module Unmagic
 
           input = input.strip
 
+          # Check for ANSI format first (numeric with optional semicolons)
+          if input.match?(/\A\d+(?:;\d+)*\z/) && ANSI.valid?(input)
+            return ANSI.parse(input)
+          end
+
           # Check if it looks like a hex color (starts with # or only contains hex digits)
           if input.start_with?("#") || input.match?(/\A[0-9A-Fa-f]{3,6}\z/)
             return Hex.parse(input)
@@ -385,6 +390,60 @@ module Unmagic
       def to_s
         to_hex
       end
+
+      # Convert to ANSI SGR color code.
+      #
+      # Returns an ANSI Select Graphic Rendition (SGR) parameter string for terminal output.
+      # Named colors that match exact ANSI colors use standard codes (30-37 for foreground,
+      # 40-47 for background). All other colors use 24-bit true color format.
+      #
+      # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
+      # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
+      # @raise [ArgumentError] If layer is not :foreground or :background
+      #
+      # @example Standard ANSI color
+      #   red = RGB.new(red: 255, green: 0, blue: 0)
+      #   red.to_ansi
+      #   # => "31"
+      #
+      # @example Background color
+      #   red = RGB.new(red: 255, green: 0, blue: 0)
+      #   red.to_ansi(layer: :background)
+      #   # => "41"
+      #
+      # @example True color for custom RGB
+      #   custom = RGB.new(red: 100, green: 150, blue: 200)
+      #   custom.to_ansi
+      #   # => "38;2;100;150;200"
+      def to_ansi(layer: :foreground)
+        raise ArgumentError, "layer must be :foreground or :background" unless [:foreground, :background].include?(layer)
+
+        # Check if RGB matches an exact ANSI named color
+        hex = to_hex.downcase
+
+        if ANSI_NAMED_COLORS.key?(hex)
+          code = ANSI_NAMED_COLORS[hex]
+          prefix = layer == :foreground ? 30 : 40
+          return (prefix + code).to_s
+        end
+
+        # Use 24-bit true color format
+        prefix = layer == :foreground ? 38 : 48
+        "#{prefix};2;#{@red.value};#{@green.value};#{@blue.value}"
+      end
+
+      # Mapping of exact hex colors to ANSI color codes.
+      # Only the 8 standard ANSI colors are mapped.
+      ANSI_NAMED_COLORS = {
+        "#000000" => 0, # black
+        "#ff0000" => 1, # red
+        "#00ff00" => 2, # green
+        "#ffff00" => 3, # yellow
+        "#0000ff" => 4, # blue
+        "#ff00ff" => 5, # magenta (fuchsia)
+        "#00ffff" => 6, # cyan (aqua)
+        "#ffffff" => 7, # white
+      }.freeze
     end
   end
 end

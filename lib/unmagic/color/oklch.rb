@@ -423,6 +423,21 @@ module Unmagic
         to_css_oklch
       end
 
+      # Convert to ANSI SGR color code.
+      #
+      # Converts to RGB first, then generates the ANSI code.
+      #
+      # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
+      # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
+      #
+      # @example
+      #   color = OKLCH.new(lightness: 0.60, chroma: 0.25, hue: 30)
+      #   color.to_ansi
+      #   # => "38;2;..." (true color format)
+      def to_ansi(layer: :foreground)
+        to_rgb.to_ansi(layer: layer)
+      end
+
       private
 
       def clamp01(x)

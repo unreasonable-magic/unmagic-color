@@ -45,6 +45,7 @@ module Unmagic
     require_relative "color/rgb"
     require_relative "color/rgb/hex"
     require_relative "color/rgb/named"
+    require_relative "color/rgb/ansi"
     require_relative "color/hsl"
     require_relative "color/oklch"
     require_relative "color/string/hash_function"
@@ -92,6 +93,8 @@ module Unmagic
           HSL.parse(input)
         elsif input.start_with?("oklch")
           OKLCH.parse(input)
+        elsif input.match?(/\A\d+(?:;\d+)*\z/) && RGB::ANSI.valid?(input)
+          RGB::ANSI.parse(input)
         elsif RGB::Named.valid?(input)
           RGB::Named.parse(input)
         else
@@ -308,6 +311,26 @@ module Unmagic
     #
     # @return [OKLCH] The color in OKLCH color space
     def to_oklch
+      raise NotImplementedError
+    end
+
+    # Convert this color to an ANSI SGR color code.
+    #
+    # Returns an ANSI Select Graphic Rendition (SGR) parameter string that can be used
+    # in terminal output. The returned string does not include the escape sequence prefix
+    # (\x1b[) or the trailing 'm'.
+    #
+    # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
+    # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
+    #
+    # @example Output red text
+    #   color = Unmagic::Color.parse("red")
+    #   puts "\x1b[#{color.to_ansi}mHello\x1b[0m"
+    #
+    # @example Set background color
+    #   color = Unmagic::Color.parse("#336699")
+    #   puts "\x1b[#{color.to_ansi(layer: :background)}mText\x1b[0m"
+    def to_ansi(layer: :foreground)
       raise NotImplementedError
     end
 

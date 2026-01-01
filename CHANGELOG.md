@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- ANSI escape code parsing support (3/4-bit, 256-color, and 24-bit true color formats)
+- `to_ansi` method on all color classes for generating ANSI escape codes
+- Support for both foreground and background ANSI color codes
+- Automatic mapping of standard colors (red, green, blue, etc.) to ANSI codes
+
 ## [0.1.0] - 2026-01-01
 
 ### Added

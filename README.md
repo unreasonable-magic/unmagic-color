@@ -25,8 +25,9 @@ gem install unmagic-color
 ## Features
 
 - **Multiple Color Spaces**: RGB, HSL, and OKLCH support
-- **Flexible Parsing**: Parse colors from hex, CSS format strings, named colors, or component values
+- **Flexible Parsing**: Parse colors from hex, CSS format strings, named colors, ANSI codes, or component values
 - **Named Colors**: Support for [X11 color names](https://en.wikipedia.org/wiki/X11_color_names) (red, blue, goldenrod, etc.)
+- **ANSI Terminal Colors**: Parse and generate ANSI escape codes for terminal output
 - **Color Conversions**: Seamlessly convert between color spaces
 - **Color Manipulation**: Lighten, darken, and blend colors
 - **Deterministic Generation**: Generate consistent colors from strings or seeds
@@ -82,7 +83,46 @@ color = Unmagic::Color["red"]
 # Named colors are case-insensitive and whitespace-tolerant
 color = Unmagic::Color.parse("Golden Rod")  # Same as "goldenrod"
 color = Unmagic::Color.parse("DARK SLATE BLUE")  # Same as "darkslateblue"
+
+# From ANSI escape codes
+color = Unmagic::Color.parse("31")              # Red (standard ANSI)
+color = Unmagic::Color.parse("38;5;196")        # Red (256-color palette)
+color = Unmagic::Color.parse("38;2;255;0;0")    # Red (24-bit true color)
 ```
+
+### Terminal Colors (ANSI)
+
+Generate ANSI escape codes for colorful terminal output:
+
+```ruby
+# Convert any color to ANSI
+color = Unmagic::Color.parse("goldenrod")
+puts "\x1b[#{color.to_ansi}mHello World!\x1b[0m"
+
+# Foreground colors (default)
+red = Unmagic::Color.parse("#ff0000")
+puts "\x1b[#{red.to_ansi}mRed text\x1b[0m"
+
+# Background colors
+blue = Unmagic::Color.parse("#0000ff")
+puts "\x1b[#{blue.to_ansi(layer: :background)}mBlue background\x1b[0m"
+
+# Named ANSI colors use standard codes
+Unmagic::Color.parse("red").to_ansi      # => "31"
+Unmagic::Color.parse("green").to_ansi    # => "32"
+
+# Custom colors use 24-bit true color
+Unmagic::Color.parse("#6496c8").to_ansi  # => "38;2;100;150;200"
+
+# Parse ANSI codes back to colors
+color = Unmagic::Color.parse("38;2;100;150;200")
+color.to_hex  # => "#6496c8"
+```
+
+**Supported ANSI formats:**
+- **3/4-bit colors**: `30-37` (foreground), `40-47` (background), `90-97` (bright foreground), `100-107` (bright background)
+- **256-color palette**: `38;5;N` (foreground), `48;5;N` (background) where N is 0-255
+- **24-bit true color**: `38;2;R;G;B` (foreground), `48;2;R;G;B` (background)
 
 ### Converting Between Color Spaces
 

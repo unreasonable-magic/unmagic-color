@@ -247,4 +247,19 @@ RSpec.describe(Unmagic::Color::OKLCH) do
       expect(color1).not_to(eq(color3))
     end
   end
+
+  describe "#to_ansi" do
+    it "delegates to RGB#to_ansi" do
+      # This will convert to approximately red
+      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
+      result = color.to_ansi
+      expect(result).to(match(/\A(?:3[0-7]|38;2;\d+;\d+;\d+)\z/))
+    end
+
+    it "supports background layer" do
+      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
+      result = color.to_ansi(layer: :background)
+      expect(result).to(match(/\A(?:4[0-7]|48;2;\d+;\d+;\d+)\z/))
+    end
+  end
 end
