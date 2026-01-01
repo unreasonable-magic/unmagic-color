@@ -23,4 +23,5 @@ group :development, :test do
   # Style
   gem "rubocop-rspec", require: false
   gem "rubocop-shopify", require: false
+  gem "rubocop-rake", require: false
 end

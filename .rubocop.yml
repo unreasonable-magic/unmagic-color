@@ -3,6 +3,7 @@ inherit_gem:
 
 plugins:
   - rubocop-rspec
+  - rubocop-rake
 
 RSpec/MultipleExpectations:
   Enabled: false
