@@ -4,7 +4,7 @@
 module Unmagic
   # Base class for working with colors in different color spaces.
   #
-  # Understanding Colors
+  # ## Understanding Colors
   #
   # A color is simply a way to describe what we see. Just like you can describe
   # a location using different coordinate systems (street address, latitude/longitude, etc.),
@@ -12,30 +12,30 @@ module Unmagic
   #
   # This library supports three main color spaces:
   #
-  # - RGB: Describes colors as a mix of Red, Green, and Blue light (like your screen)
-  # - HSL: Describes colors using Hue (color wheel position), Saturation (intensity),
+  # - {RGB}: Describes colors as a mix of Red, Green, and Blue light (like your screen)
+  # - {HSL}: Describes colors using Hue (color wheel position), Saturation (intensity),
   #   and Lightness (brightness)
-  # - OKLCH: A modern color space that matches how humans perceive color differences
+  # - {OKLCH}: A modern color space that matches how humans perceive color differences
   #
-  # Basic Usage
+  # ## Basic Usage
   #
   # Parse a color from a string:
   #
-  #   color = Color.parse("#FF5733")
-  #   color = Color["rgb(255, 87, 51)"]
-  #   color = Color.parse("hsl(9, 100%, 60%)")
+  #     color = Unmagic::Color.parse("#FF5733")
+  #     color = Unmagic::Color["rgb(255, 87, 51)"]
+  #     color = Unmagic::Color.parse("hsl(9, 100%, 60%)")
   #
   # Convert between color spaces:
   #
-  #   rgb = Color.parse("#FF5733")
-  #   hsl = rgb.to_hsl
-  #   oklch = rgb.to_oklch
+  #     rgb = Unmagic::Color.parse("#FF5733")
+  #     hsl = rgb.to_hsl
+  #     oklch = rgb.to_oklch
   #
   # Manipulate colors:
   #
-  #   lighter = color.lighten(0.2)
-  #   darker = color.darken(0.1)
-  #   mixed = color.blend(other_color, 0.5)
+  #     lighter = color.lighten(0.2)
+  #     darker = color.darken(0.1)
+  #     mixed = color.blend(other_color, 0.5)
   class Color
     # @private
     class Error < StandardError; end

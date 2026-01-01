@@ -2,75 +2,77 @@
 
 module Unmagic
   class Color
-    # OKLCH (Lightness, Chroma, Hue) color representation.
+    # `OKLCH` (Lightness, Chroma, Hue) color representation.
     #
-    # Understanding OKLCH
+    # ## Understanding OKLCH
     #
     # OKLCH is a modern color space designed to match how humans actually perceive colors.
-    # Unlike RGB or even HSL, OKLCH ensures that colors with the same lightness value
+    # Unlike {RGB} or even {HSL}, OKLCH ensures that colors with the same lightness value
     # *look* equally bright to our eyes, regardless of their hue.
     #
-    # The Problem with RGB and HSL:
+    # ## The Problem with RGB and HSL
     #
-    # In RGB and HSL, pure yellow and pure blue can have the same "lightness" value,
+    # In {RGB} and {HSL}, pure yellow and pure blue can have the same "lightness" value,
     # but yellow looks much brighter to our eyes. This makes it hard to create
     # consistent-looking color palettes.
     #
     # OKLCH solves this by being "perceptually uniform" - if you change lightness
-    # by 0.1, it looks like the same amount of change whether you're working with
+    # by `0.1`, it looks like the same amount of change whether you're working with
     # red, green, blue, or any other hue.
     #
-    # The Three Components:
+    # ## The Three Components
     #
-    # 1. Lightness (0.0-1.0): How bright the color appears
-    #    - 0.0 = Black
-    #    - 0.5 = Medium brightness
-    #    - 1.0 = White
-    #    Unlike HSL, this matches *perceived* brightness consistently across all hues.
+    # 1. **Lightness** (`0.0-1.0`): How bright the color appears
+    #    - `0.0` = Black
+    #    - `0.5` = Medium brightness
+    #    - `1.0` = White
     #
-    # 2. Chroma (0.0-0.5): How colorful/saturated it is
-    #    - 0.0 = Gray (no color)
-    #    - 0.15 = Moderate color (good for UI)
-    #    - 0.3+ = Very vivid (use sparingly)
+    #    Unlike {HSL}, this matches *perceived* brightness consistently across all hues.
+    #
+    # 2. **Chroma** (`0.0-0.5`): How colorful/saturated it is
+    #    - `0.0` = Gray (no color)
+    #    - `0.15` = Moderate color (good for UI)
+    #    - `0.3+` = Very vivid (use sparingly)
+    #
     #    Think of it like saturation, but more accurate to perception.
     #
-    # 3. Hue (0-360°): The color itself (same as HSL)
-    #    - 0°/360° = Red
-    #    - 120° = Green
-    #    - 240° = Blue
+    # 3. **Hue** (`0-360°`): The color itself (same as {HSL})
+    #    - `0°/360°` = Red
+    #    - `120°` = Green
+    #    - `240°` = Blue
     #
-    # Why Use OKLCH?
+    # ## Why Use OKLCH?
     #
     # - Creating accessible color palettes (ensure consistent contrast)
     # - Generating color scales that look evenly spaced
     # - Interpolating between colors smoothly
     # - Matching colors that "feel" equally bright
     #
-    # When to Use Each Color Space:
+    # ## When to Use Each Color Space
     #
-    # - RGB: When working with screens/displays directly
-    # - HSL: When you need intuitive color manipulation
-    # - OKLCH: When you need perceptually accurate colors (design systems, accessibility)
+    # - **{RGB}**: When working with screens/displays directly
+    # - **{HSL}**: When you need intuitive color manipulation
+    # - **OKLCH**: When you need perceptually accurate colors (design systems, accessibility)
     #
-    # Examples
+    # ## Examples
     #
-    #   # Parse OKLCH colors
-    #   color = OKLCH.parse("oklch(0.65 0.15 240)")  # Medium blue
+    #     # Parse OKLCH colors
+    #     color = Unmagic::Color::OKLCH.parse("oklch(0.65 0.15 240)")  # Medium blue
     #
-    #   # Create directly
-    #   accessible = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240)
+    #     # Create directly
+    #     accessible = Unmagic::Color::OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240)
     #
-    #   # Access components
-    #   color.lightness  #=> 0.65 (ratio form)
-    #   color.chroma.value  #=> 0.15
-    #   color.hue.value     #=> 240
+    #     # Access components
+    #     color.lightness  #=> 0.65 (ratio form)
+    #     color.chroma.value  #=> 0.15
+    #     color.hue.value     #=> 240
     #
-    #   # Create perceptually uniform variations
-    #   lighter = color.lighten(0.05)  # Looks 5% brighter
-    #   less_colorful = color.desaturate(0.03)
+    #     # Create perceptually uniform variations
+    #     lighter = color.lighten(0.05)  # Looks 5% brighter
+    #     less_colorful = color.desaturate(0.03)
     #
-    #   # Generate consistent colors
-    #   OKLCH.derive("user@example.com".hash)  # Perceptually balanced color
+    #     # Generate consistent colors
+    #     Unmagic::Color::OKLCH.derive("user@example.com".hash)  # Perceptually balanced color
     class OKLCH < Color
       class ParseError < Color::Error; end
 

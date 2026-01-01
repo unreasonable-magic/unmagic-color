@@ -10,6 +10,7 @@ group :development, :test do
   # For documentation
   gem "rdoc"
   gem "yard"
+  gem "redcarpet"
   gem "rack"
   gem "rackup"
   gem "yard-doctest"

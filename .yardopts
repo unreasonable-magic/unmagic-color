@@ -1,1 +1,4 @@
 --plugin yard-doctest
+--markup markdown
+--markup-provider redcarpet
+--load docs/yard_swatches.rb

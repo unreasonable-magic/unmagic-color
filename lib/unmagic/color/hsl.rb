@@ -2,70 +2,75 @@
 
 module Unmagic
   class Color
-    # HSL (Hue, Saturation, Lightness) color representation.
+    # `HSL` (Hue, Saturation, Lightness) color representation.
     #
-    # Understanding HSL
+    # ## Understanding HSL
     #
-    # While RGB describes colors as mixing light, HSL describes colors in a way that's
+    # While {RGB} describes colors as mixing light, HSL describes colors in a way that's
     # more intuitive to humans. It separates the "what color" from "how vibrant" and "how bright."
     #
-    # The Three Components:
+    # ## The Three Components
     #
-    # 1. Hue (0-360°): The actual color on the color wheel
-    #    - 0°/360° = Red
-    #    - 60° = Yellow
-    #    - 120° = Green
-    #    - 180° = Cyan
-    #    - 240° = Blue
-    #    - 300° = Magenta
+    # 1. **Hue** (`0-360°`): The actual color on the color wheel
+    #    - `0°/360°` = Red
+    #    - `60°` = Yellow
+    #    - `120°` = Green
+    #    - `180°` = Cyan
+    #    - `240°` = Blue
+    #    - `300°` = Magenta
+    #
     #    Think of it as rotating around a circle of colors.
     #
-    # 2. Saturation (0-100%): How pure/intense the color is
-    #    - 0% = Gray (no color, just brightness)
-    #    - 50% = Moderate color
-    #    - 100% = Full, vivid color
+    # 2. **Saturation** (`0-100%`): How pure/intense the color is
+    #    - `0%` = Gray (no color, just brightness)
+    #    - `50%` = Moderate color
+    #    - `100%` = Full, vivid color
+    #
     #    Think of it as "how much color" vs "how much gray."
     #
-    # 3. Lightness (0-100%): How bright the color is
-    #    - 0% = Black (no light)
-    #    - 50% = Pure color
-    #    - 100% = White (full light)
+    # 3. **Lightness** (`0-100%`): How bright the color is
+    #    - `0%` = Black (no light)
+    #    - `50%` = Pure color
+    #    - `100%` = White (full light)
+    #
     #    Think of it as a dimmer switch.
     #
-    # Why HSL is Useful
+    # ## Why HSL is Useful
     #
     # HSL makes it easy to:
+    #
     # - Create color variations (keep hue, adjust saturation/lightness)
     # - Generate color schemes (change hue by fixed amounts)
     # - Make colors lighter/darker without changing their "color-ness"
     #
-    # Common Patterns:
-    # - Pastel colors: High lightness, medium-low saturation (70-80% L, 30-50% S)
-    # - Vibrant colors: Medium lightness, high saturation (50% L, 80-100% S)
-    # - Dark colors: Low lightness, any saturation (20-30% L)
-    # - Muted colors: Medium lightness and saturation (40-60% L, 30-50% S)
+    # ## Common Patterns
     #
-    # Examples
+    # - **Pastel colors**: High lightness, medium-low saturation (`70-80% L`, `30-50% S`)
+    # - **Vibrant colors**: Medium lightness, high saturation (`50% L`, `80-100% S`)
+    # - **Dark colors**: Low lightness, any saturation (`20-30% L`)
+    # - **Muted colors**: Medium lightness and saturation (`40-60% L`, `30-50% S`)
     #
-    #   # Parse HSL colors
-    #   color = HSL.parse("hsl(120, 100%, 50%)")  # Pure green
-    #   color = HSL.parse("240, 50%, 75%")        # Light blue
+    # ## Examples
     #
-    #   # Create directly
-    #   red = HSL.new(hue: 0, saturation: 100, lightness: 50)
-    #   pastel = HSL.new(hue: 180, saturation: 40, lightness: 80)
+    #     # Parse HSL colors
+    #     color = Unmagic::Color::HSL.parse("hsl(120, 100%, 50%)")  # Pure green
+    #     color = Unmagic::Color::HSL.parse("240, 50%, 75%")        # Light blue
     #
-    #   # Access components
-    #   color.hue.value         #=> 120 (degrees)
-    #   color.saturation.value  #=> 100 (percent)
-    #   color.lightness.value   #=> 50 (percent)
+    #     # Create directly
+    #     red = Unmagic::Color::HSL.new(hue: 0, saturation: 100, lightness: 50)
+    #     pastel = Unmagic::Color::HSL.new(hue: 180, saturation: 40, lightness: 80)
     #
-    #   # Easy color variations
-    #   lighter = color.lighten(0.2)    # Increase lightness
-    #   muted = color.desaturate(0.3)   # Reduce saturation
+    #     # Access components
+    #     color.hue.value         #=> 120 (degrees)
+    #     color.saturation.value  #=> 100 (percent)
+    #     color.lightness.value   #=> 50 (percent)
     #
-    #   # Generate color from text
-    #   HSL.derive("user@example.com".hash)  # Consistent color
+    #     # Easy color variations
+    #     lighter = color.lighten(0.2)    # Increase lightness
+    #     muted = color.desaturate(0.3)   # Reduce saturation
+    #
+    #     # Generate color from text
+    #     Unmagic::Color::HSL.derive("user@example.com".hash)  # Consistent color
     class HSL < Color
       class ParseError < Color::Error; end
 

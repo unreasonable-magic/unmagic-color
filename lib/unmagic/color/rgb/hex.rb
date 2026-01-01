@@ -5,28 +5,30 @@ module Unmagic
     class RGB
       # Hexadecimal color parsing utilities.
       #
-      # Hex colors are a compact way to write RGB values using hexadecimal (base-16)
-      # notation. Each pair of hex digits represents one color component (0-255).
+      # Hex colors are a compact way to write {RGB} values using hexadecimal (base-16)
+      # notation. Each pair of hex digits represents one color component (`0-255`).
       #
-      # Understanding Hexadecimal
+      # ## Understanding Hexadecimal
       #
-      # Hexadecimal uses 16 digits: 0-9 and A-F
-      # - 0 = 0, 9 = 9, A = 10, B = 11, ... F = 15
-      # - Two hex digits can represent 0-255 (16 × 16 = 256 values)
-      # - FF = 255, 00 = 0, 80 = 128, etc.
+      # Hexadecimal uses 16 digits: `0-9` and `A-F`
       #
-      # Hex Color Format
+      # - `0 = 0`, `9 = 9`, `A = 10`, `B = 11`, ... `F = 15`
+      # - Two hex digits can represent `0-255` (`16 × 16 = 256` values)
+      # - `FF = 255`, `00 = 0`, `80 = 128`, etc.
       #
-      # - Full format: #RRGGBB (6 digits, 2 per component)
-      # - Short format: #RGB (3 digits, each digit is doubled)
-      # - Hash optional: Can be written with or without the # prefix
+      # ## Hex Color Format
       #
-      # Examples:
-      # - #FF0000 = Red (255, 0, 0)
-      # - #00FF00 = Green (0, 255, 0)
-      # - #0000FF = Blue (0, 0, 255)
-      # - #F00 = #FF0000 (short form)
-      # - #ABC = #AABBCC (short form expanded)
+      # - **Full format**: `#RRGGBB` (6 digits, 2 per component)
+      # - **Short format**: `#RGB` (3 digits, each digit is doubled)
+      # - **Hash optional**: Can be written with or without the `#` prefix
+      #
+      # ## Examples
+      #
+      # - `#FF0000` = Red (`255, 0, 0`)
+      # - `#00FF00` = Green (`0, 255, 0`)
+      # - `#0000FF` = Blue (`0, 0, 255`)
+      # - `#F00` = `#FF0000` (short form)
+      # - `#ABC` = `#AABBCC` (short form expanded)
       class Hex
         class ParseError < Color::Error; end
 

@@ -2,55 +2,57 @@
 
 module Unmagic
   class Color
-    # RGB (Red, Green, Blue) color representation.
+    # `RGB` (Red, Green, Blue) color representation.
     #
-    # Understanding RGB
+    # ## Understanding RGB
     #
     # RGB is how your computer screen creates colors. Every color you see on a screen
     # is made by combining three lights: Red, Green, and Blue. Each light can be set
-    # from 0 (off) to 255 (full brightness).
+    # from `0` (off) to `255` (full brightness).
     #
     # Think of it like mixing three flashlights:
-    # - Red=255, Green=0, Blue=0 → Pure red light
-    # - Red=0, Green=255, Blue=0 → Pure green light
-    # - Red=255, Green=255, Blue=0 → Yellow (red + green)
-    # - Red=255, Green=255, Blue=255 → White (all lights on)
-    # - Red=0, Green=0, Blue=0 → Black (all lights off)
     #
-    # Why 0-255?
+    # - `Red=255, Green=0, Blue=0` → Pure red light
+    # - `Red=0, Green=255, Blue=0` → Pure green light
+    # - `Red=255, Green=255, Blue=0` → Yellow (red + green)
+    # - `Red=255, Green=255, Blue=255` → White (all lights on)
+    # - `Red=0, Green=0, Blue=0` → Black (all lights off)
+    #
+    # ## Why 0-255?
     #
     # Computers store each color component in 8 bits (one byte), which can hold
-    # 256 different values (0-255). This gives us 256³ = 16,777,216 possible colors.
+    # 256 different values (`0-255`). This gives us `256³ = 16,777,216` possible colors.
     #
-    # Common Formats
+    # ## Common Formats
     #
     # RGB colors can be written in different ways:
-    # - Hex: #FF5733 (2 hex digits per component: FF=255, 57=87, 33=51)
-    # - Short hex: #F73 (expanded to #FF7733)
-    # - RGB function: rgb(255, 87, 51)
     #
-    # Usage Examples
+    # - Hex: `#FF5733` (2 hex digits per component: `FF=255, 57=87, 33=51`)
+    # - Short hex: `#F73` (expanded to `#FF7733`)
+    # - RGB function: `rgb(255, 87, 51)`
     #
-    #   # Parse from different formats
-    #   color = RGB.parse("#FF5733")
-    #   color = RGB.parse("rgb(255, 87, 51)")
-    #   color = RGB.parse("F73")
+    # ## Usage Examples
     #
-    #   # Create directly
-    #   color = RGB.new(red: 255, green: 87, blue: 51)
+    #     # Parse from different formats
+    #     color = Unmagic::Color::RGB.parse("#FF5733")
+    #     color = Unmagic::Color::RGB.parse("rgb(255, 87, 51)")
+    #     color = Unmagic::Color::RGB.parse("F73")
     #
-    #   # Access components
-    #   color.red.value    #=> 255
-    #   color.green.value  #=> 87
-    #   color.blue.value   #=> 51
+    #     # Create directly
+    #     color = Unmagic::Color::RGB.new(red: 255, green: 87, blue: 51)
     #
-    #   # Convert to other formats
-    #   color.to_hex       #=> "#ff5733"
-    #   color.to_hsl       #=> HSL color
-    #   color.to_oklch     #=> OKLCH color
+    #     # Access components
+    #     color.red.value    #=> 255
+    #     color.green.value  #=> 87
+    #     color.blue.value   #=> 51
     #
-    #   # Generate deterministic colors from text
-    #   RGB.derive("user@example.com".hash)  #=> Consistent color for this string
+    #     # Convert to other formats
+    #     color.to_hex       #=> "#ff5733"
+    #     color.to_hsl       #=> HSL color
+    #     color.to_oklch     #=> OKLCH color
+    #
+    #     # Generate deterministic colors from text
+    #     Unmagic::Color::RGB.derive("user@example.com".hash)  #=> Consistent color for this string
     class RGB < Color
       class ParseError < Color::Error; end
 
