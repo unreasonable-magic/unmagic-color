@@ -1,15 +1,7 @@
-GIT
-  remote: git@github.com:unreasonable-magic/unmagic-support
-  revision: 947ea8bebd129c7fef149f6c1a282071e8807862
-  specs:
-    unmagic-support (0.1.0)
-      activesupport (>= 7.0)
-
 PATH
   remote: .
   specs:
     unmagic-color (0.1.0)
-      unmagic-support
 
 GEM
   remote: https://rubygems.org/
@@ -109,7 +101,6 @@ DEPENDENCIES
   rspec
   rubocop-rails-omakase
   unmagic-color!
-  unmagic-support!
 
 BUNDLED WITH
    2.7.1

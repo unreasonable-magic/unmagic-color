@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "unmagic/support/percentage"
-
 module Unmagic
   class Color
     class Error < StandardError; end
@@ -12,6 +10,7 @@ module Unmagic
     require_relative "color/hsl"
     require_relative "color/oklch"
     require_relative "color/string/hash_function"
+    require_relative "color/util/percentage"
 
     class << self
       def parse(input)
@@ -168,8 +167,8 @@ module Unmagic
     end
 
     # Percentage-based units
-    class Saturation < Unmagic::Support::Percentage; end
-    class Lightness < Unmagic::Support::Percentage; end
+    class Saturation < Unmagic::Util::Percentage; end
+    class Lightness < Unmagic::Util::Percentage; end
 
     # Convert to RGB representation
     def to_rgb
