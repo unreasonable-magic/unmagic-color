@@ -3,11 +3,48 @@
 module Unmagic
   class Color
     class RGB
+      # Hexadecimal color parsing utilities.
+      #
+      # Hex colors are a compact way to write RGB values using hexadecimal (base-16)
+      # notation. Each pair of hex digits represents one color component (0-255).
+      #
+      # Understanding Hexadecimal
+      #
+      # Hexadecimal uses 16 digits: 0-9 and A-F
+      # - 0 = 0, 9 = 9, A = 10, B = 11, ... F = 15
+      # - Two hex digits can represent 0-255 (16 × 16 = 256 values)
+      # - FF = 255, 00 = 0, 80 = 128, etc.
+      #
+      # Hex Color Format
+      #
+      # - Full format: #RRGGBB (6 digits, 2 per component)
+      # - Short format: #RGB (3 digits, each digit is doubled)
+      # - Hash optional: Can be written with or without the # prefix
+      #
+      # Examples:
+      # - #FF0000 = Red (255, 0, 0)
+      # - #00FF00 = Green (0, 255, 0)
+      # - #0000FF = Blue (0, 0, 255)
+      # - #F00 = #FF0000 (short form)
+      # - #ABC = #AABBCC (short form expanded)
       class Hex
         class ParseError < Color::Error; end
 
         class << self
-          # Check if a string is a valid hex color
+          # Check if a string is a valid hex color.
+          #
+          # @param value [String] The string to validate
+          # @return [Boolean] true if valid hex color, false otherwise
+          #
+          # @example
+          #   Unmagic::Color::RGB::Hex.valid?("#FF5733")
+          #   # => true
+          #
+          #   Unmagic::Color::RGB::Hex.valid?("F73")
+          #   # => true
+          #
+          #   Unmagic::Color::RGB::Hex.valid?("GGGGGG")
+          #   # => false
           def valid?(value)
             parse(value)
             true
@@ -15,7 +52,20 @@ module Unmagic
             false
           end
 
-          # Parse hex string like "#FF8800" or "FF8800"
+          # Parse a hexadecimal color string.
+          #
+          # Accepts both full (6-digit) and short (3-digit) hex formats,
+          # with or without the # prefix.
+          #
+          # @param input [String] The hex color string to parse
+          # @return [RGB] The parsed RGB color
+          # @raise [ParseError] If the input is not a valid hex color
+          #
+          # @example Full format with hash
+          #   Unmagic::Color::RGB::Hex.parse("#FF8800")
+          #
+          # @example Short format without hash
+          #   Unmagic::Color::RGB::Hex.parse("F80")
           def parse(input)
             raise ParseError, "Input must be a string" unless input.is_a?(::String)
 

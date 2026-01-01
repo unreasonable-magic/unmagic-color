@@ -4,18 +4,14 @@ module Unmagic
   module Util
     # Represents a percentage value with validation and formatting capabilities.
     # Handles both direct percentage values and ratio calculations.
-    #
     # Example:
-    #
     #   # Direct percentage value
     #   percentage = Percentage.new(75.5)
     #   puts percentage.to_s  # => "75.5%"
     #   puts percentage.value # => 75.5
-    #
     #   # Calculated from ratio
     #   percentage = Percentage.new(50, 100)
     #   puts percentage.to_s  # => "50.0%"
-    #
     #   # Progress tracking
     #   percentage = Percentage.new(current_item, total_items)
     #   puts percentage.to_s  # => "25.0%"
@@ -25,7 +21,6 @@ module Unmagic
       attr_reader :value
 
       # Create a new percentage
-      #
       # Single parameter: treat as percentage value (0-100)
       # Two parameters: calculate percentage from numerator/denominator
       def initialize(*args)

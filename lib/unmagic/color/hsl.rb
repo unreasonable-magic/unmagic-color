@@ -2,11 +2,86 @@
 
 module Unmagic
   class Color
+    # HSL (Hue, Saturation, Lightness) color representation.
+    #
+    # Understanding HSL
+    #
+    # While RGB describes colors as mixing light, HSL describes colors in a way that's
+    # more intuitive to humans. It separates the "what color" from "how vibrant" and "how bright."
+    #
+    # The Three Components:
+    #
+    # 1. Hue (0-360°): The actual color on the color wheel
+    #    - 0°/360° = Red
+    #    - 60° = Yellow
+    #    - 120° = Green
+    #    - 180° = Cyan
+    #    - 240° = Blue
+    #    - 300° = Magenta
+    #    Think of it as rotating around a circle of colors.
+    #
+    # 2. Saturation (0-100%): How pure/intense the color is
+    #    - 0% = Gray (no color, just brightness)
+    #    - 50% = Moderate color
+    #    - 100% = Full, vivid color
+    #    Think of it as "how much color" vs "how much gray."
+    #
+    # 3. Lightness (0-100%): How bright the color is
+    #    - 0% = Black (no light)
+    #    - 50% = Pure color
+    #    - 100% = White (full light)
+    #    Think of it as a dimmer switch.
+    #
+    # Why HSL is Useful
+    #
+    # HSL makes it easy to:
+    # - Create color variations (keep hue, adjust saturation/lightness)
+    # - Generate color schemes (change hue by fixed amounts)
+    # - Make colors lighter/darker without changing their "color-ness"
+    #
+    # Common Patterns:
+    # - Pastel colors: High lightness, medium-low saturation (70-80% L, 30-50% S)
+    # - Vibrant colors: Medium lightness, high saturation (50% L, 80-100% S)
+    # - Dark colors: Low lightness, any saturation (20-30% L)
+    # - Muted colors: Medium lightness and saturation (40-60% L, 30-50% S)
+    #
+    # Examples
+    #
+    #   # Parse HSL colors
+    #   color = HSL.parse("hsl(120, 100%, 50%)")  # Pure green
+    #   color = HSL.parse("240, 50%, 75%")        # Light blue
+    #
+    #   # Create directly
+    #   red = HSL.new(hue: 0, saturation: 100, lightness: 50)
+    #   pastel = HSL.new(hue: 180, saturation: 40, lightness: 80)
+    #
+    #   # Access components
+    #   color.hue.value         #=> 120 (degrees)
+    #   color.saturation.value  #=> 100 (percent)
+    #   color.lightness.value   #=> 50 (percent)
+    #
+    #   # Easy color variations
+    #   lighter = color.lighten(0.2)    # Increase lightness
+    #   muted = color.desaturate(0.3)   # Reduce saturation
+    #
+    #   # Generate color from text
+    #   HSL.derive("user@example.com".hash)  # Consistent color
     class HSL < Color
       class ParseError < Color::Error; end
 
       attr_reader :hue, :saturation, :lightness
 
+      # Create a new HSL color.
+      #
+      # @param hue [Numeric] Hue in degrees (0-360), wraps around if outside range
+      # @param saturation [Numeric] Saturation percentage (0-100), clamped to range
+      # @param lightness [Numeric] Lightness percentage (0-100), clamped to range
+      #
+      # @example Create a pure red
+      #   HSL.new(hue: 0, saturation: 100, lightness: 50)
+      #
+      # @example Create a pastel blue
+      #   HSL.new(hue: 240, saturation: 40, lightness: 80)
       def initialize(hue:, saturation:, lightness:)
         super()
         @hue = Color::Hue.new(value: hue)
@@ -15,7 +90,22 @@ module Unmagic
       end
 
       class << self
-        # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
+        # Parse an HSL color from a string.
+        #
+        # Accepts formats:
+        # - CSS format: "hsl(120, 100%, 50%)"
+        # - Raw values: "120, 100%, 50%" or "120, 100, 50"
+        # - Percentages optional for saturation and lightness
+        #
+        # @param input [String] The HSL color string to parse
+        # @return [HSL] The parsed HSL color
+        # @raise [ParseError] If the input format is invalid or values are out of range
+        #
+        # @example Parse CSS format
+        #   HSL.parse("hsl(120, 100%, 50%)")
+        #
+        # @example Parse without function wrapper
+        #   HSL.parse("240, 50%, 75%")
         def parse(input)
           raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
@@ -66,8 +156,25 @@ module Unmagic
           new(hue: h, saturation: s, lightness: l)
         end
 
-        # Factory: deterministic HSL from integer seed
-        # Produces stable colors from hash function output.
+        # Generate a deterministic HSL color from an integer seed.
+        #
+        # Creates visually distinct, consistent colors from hash values. Particularly
+        # useful because HSL naturally spreads colors evenly around the color wheel.
+        #
+        # @param seed [Integer] The seed value (typically from a hash function)
+        # @param lightness [Numeric] Fixed lightness percentage (0-100, default 50)
+        # @param saturation_range [Range] Range for saturation variation (default 40..80)
+        # @return [HSL] A deterministic color based on the seed
+        # @raise [ArgumentError] If seed is not an integer
+        #
+        # @example Generate user avatar color
+        #   user_color = HSL.derive("alice@example.com".hash)
+        #
+        # @example Generate lighter colors
+        #   HSL.derive(12345, lightness: 70)
+        #
+        # @example Generate muted colors
+        #   HSL.derive(12345, saturation_range: (20..40))
         def derive(seed, lightness: 50, saturation_range: (40..80))
           raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
 
@@ -83,27 +190,55 @@ module Unmagic
         end
       end
 
+      # Convert to HSL color space.
+      #
+      # Since this is already an HSL color, returns self.
+      #
+      # @return [HSL] self
       def to_hsl
         self
       end
 
-      # Convert to RGB
+      # Convert to RGB color space.
+      #
+      # @return [RGB] The color in RGB color space
       def to_rgb
         rgb = hsl_to_rgb
         require_relative "rgb"
         Unmagic::Color::RGB.new(red: rgb[0], green: rgb[1], blue: rgb[2])
       end
 
-      # Convert to OKLCH via RGB (placeholder)
+      # Convert to OKLCH color space.
+      #
+      # Converts via RGB as an intermediate step.
+      #
+      # @return [OKLCH] The color in OKLCH color space
       def to_oklch
         to_rgb.to_oklch
       end
 
+      # Calculate the relative luminance.
+      #
+      # Converts to RGB first, then calculates luminance.
+      #
+      # @return [Float] Luminance from 0.0 (black) to 1.0 (white)
       def luminance
         to_rgb.luminance
       end
 
-      # Blend with another color
+      # Blend this color with another color in HSL space.
+      #
+      # Blending in HSL can produce different results than RGB blending,
+      # often creating more natural-looking color transitions.
+      #
+      # @param other [Color] The color to blend with (automatically converted to HSL)
+      # @param amount [Float] How much of the other color to mix in (0.0-1.0)
+      # @return [HSL] A new HSL color that is a blend of the two
+      #
+      # @example Create a color halfway between red and blue
+      #   red = HSL.new(hue: 0, saturation: 100, lightness: 50)
+      #   blue = HSL.new(hue: 240, saturation: 100, lightness: 50)
+      #   purple = red.blend(blue, 0.5)
       def blend(other, amount = 0.5)
         amount = amount.to_f.clamp(0, 1)
         other_hsl = other.respond_to?(:to_hsl) ? other.to_hsl : other
@@ -116,20 +251,44 @@ module Unmagic
         Unmagic::Color::HSL.new(hue: new_hue, saturation: new_saturation, lightness: new_lightness)
       end
 
-      # Lighten by adjusting lightness
+      # Create a lighter version by increasing lightness.
+      #
+      # In HSL, lightening moves the color toward white while preserving the hue.
+      # The amount determines how far to move from the current lightness toward 100%.
+      #
+      # @param amount [Float] How much to lighten (0.0-1.0, default 0.1)
+      # @return [HSL] A lighter version of this color
+      #
+      # @example Make a color 30% lighter
+      #   dark = HSL.new(hue: 240, saturation: 80, lightness: 30)
+      #   light = dark.lighten(0.3)
       def lighten(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
         new_lightness = @lightness.value + (100 - @lightness.value) * amount
         Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
       end
 
-      # Darken by adjusting lightness
+      # Create a darker version by decreasing lightness.
+      #
+      # In HSL, darkening moves the color toward black while preserving the hue.
+      # The amount determines how much to reduce the current lightness toward 0%.
+      #
+      # @param amount [Float] How much to darken (0.0-1.0, default 0.1)
+      # @return [HSL] A darker version of this color
+      #
+      # @example Make a color 20% darker
+      #   bright = HSL.new(hue: 60, saturation: 100, lightness: 70)
+      #   subdued = bright.darken(0.2)
       def darken(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
         new_lightness = @lightness.value * (1 - amount)
         Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
       end
 
+      # Check if two HSL colors are equal.
+      #
+      # @param other [Object] The object to compare with
+      # @return [Boolean] true if both colors have the same HSL values
       def ==(other)
         other.is_a?(Unmagic::Color::HSL) &&
           lightness == other.lightness &&
@@ -137,32 +296,32 @@ module Unmagic
           hue == other.hue
       end
 
-      # Generate a progression of colors by applying lightness/saturation transformations
+      # Generate a progression of colors by varying lightness and saturation.
       #
-      # Examples:
+      # This creates an array of related colors, useful for color scales in UI design
+      # (like shades of blue from light to dark).
       #
-      #   # Using arrays (convenient for predefined values)
-      #   hsl.progression(steps: 7, lightness: [10, 20, 30, 40, 50, 60, 70])
-      #   hsl.progression(steps: 5, lightness: [20, 40, 60]) # uses 60 for steps 4-5
-      #   hsl.progression(steps: 3, lightness: [0, 50, 100], saturation: [80, 60, 40])
+      # The lightness and saturation can be provided as:
+      # - Array: Specific values for each step (last value repeats if array is shorter)
+      # - Proc: Dynamic calculation based on the base color and step index
       #
-      #   # Using procs for dynamic calculation
-      #   hsl.progression(steps: 7, lightness: ->(_hsl, _i) { 0 })   # all black
-      #   hsl.progression(steps: 7, lightness: ->(_hsl, _i) { 100 }) # all white
+      # @param steps [Integer] Number of colors to generate (must be at least 1)
+      # @param lightness [Array<Numeric>, Proc] Lightness values or calculation function
+      # @param saturation [Array<Numeric>, Proc, nil] Optional saturation values or function
+      # @return [Array<HSL>] Array of HSL colors in the progression
+      # @raise [ArgumentError] If steps < 1 or lightness/saturation are invalid types
       #
-      #   # Dynamic based on current lightness
-      #   hsl.progression(
-      #     steps: 7,
-      #     lightness: ->(hsl, _i) { hsl.lightness < 50 ? 90 : 10 }
-      #   )
+      # @example Create a 5-step lightness progression
+      #   base = Unmagic::Color::HSL.new(hue: 240, saturation: 80, lightness: 50)
+      #   base.progression(steps: 5, lightness: [20, 35, 50, 65, 80])
       #
-      #   # Complex progressions with step awareness
-      #   hsl.progression(
-      #     steps: 7,
-      #     lightness: ->(hsl, i) { hsl.lightness + (i * 10) },
-      #     saturation: ->(hsl, i) { i < 4 ? hsl.saturation : hsl.saturation - 5 }
-      #   )
+      # @example Dynamic lightness calculation
+      #   base = Unmagic::Color::HSL.new(hue: 240, saturation: 80, lightness: 50)
+      #   base.progression(steps: 7, lightness: ->(hsl, i) { 20 + (i * 12) })
       #
+      # @example Vary both lightness and saturation
+      #   base = Unmagic::Color::HSL.new(hue: 240, saturation: 80, lightness: 50)
+      #   base.progression(steps: 5, lightness: [30, 45, 60, 75, 90], saturation: [100, 80, 60, 40, 20])
       def progression(steps:, lightness:, saturation: nil)
         raise ArgumentError, "steps must be at least 1" if steps < 1
         raise ArgumentError, "lightness must be a proc or array" unless lightness.respond_to?(:call) || lightness.is_a?(Array)
@@ -200,8 +359,18 @@ module Unmagic
         colors
       end
 
+      # Convert to string representation.
+      #
+      # Returns the CSS hsl() function format.
+      #
+      # @return [String] HSL string like "hsl(240, 80%, 50%)"
+      #
+      # @example
+      #   color = HSL.new(hue: 240, saturation: 80, lightness: 50)
+      #   color.to_s
+      #   # => "hsl(240, 80.0%, 50.0%)"
       def to_s
-        "hsl(#{@hue.value.round}, #{@saturation}%, #{@lightness}%)"
+        "hsl(#{@hue.value.round}, #{@saturation.value}%, #{@lightness.value}%)"
       end
 
       private
