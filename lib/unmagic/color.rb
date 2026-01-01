@@ -44,6 +44,7 @@ module Unmagic
 
     require_relative "color/rgb"
     require_relative "color/rgb/hex"
+    require_relative "color/rgb/named"
     require_relative "color/hsl"
     require_relative "color/oklch"
     require_relative "color/string/hash_function"
@@ -53,7 +54,7 @@ module Unmagic
       # Parse a color string into the appropriate color space object.
       #
       # This method automatically detects the format and returns the correct color type.
-      # Supported formats include hex colors, RGB, HSL, and OKLCH.
+      # Supported formats include hex colors, RGB, HSL, OKLCH, and named colors.
       #
       # @param input [String, Color] The color string to parse, or an existing Color object
       # @return [RGB, HSL, OKLCH] A color object in the appropriate color space
@@ -70,6 +71,9 @@ module Unmagic
       #
       # @example Parse an OKLCH color
       #   Unmagic::Color.parse("oklch(0.65 0.15 30)")
+      #
+      # @example Parse a named color
+      #   Unmagic::Color.parse("goldenrod")
       #
       # @example Pass through an existing color
       #   color = Unmagic::Color.parse("#FF5733")
@@ -88,6 +92,8 @@ module Unmagic
           HSL.parse(input)
         elsif input.start_with?("oklch")
           OKLCH.parse(input)
+        elsif RGB::Named.valid?(input)
+          RGB::Named.parse(input)
         else
           raise ParseError, "Unknown color #{input.inspect}"
         end

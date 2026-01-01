@@ -25,7 +25,8 @@ gem install unmagic-color
 ## Features
 
 - **Multiple Color Spaces**: RGB, HSL, and OKLCH support
-- **Flexible Parsing**: Parse colors from hex, CSS format strings, or component values
+- **Flexible Parsing**: Parse colors from hex, CSS format strings, named colors, or component values
+- **Named Colors**: Support for [X11 color names](https://en.wikipedia.org/wiki/X11_color_names) (red, blue, goldenrod, etc.)
 - **Color Conversions**: Seamlessly convert between color spaces
 - **Color Manipulation**: Lighten, darken, and blend colors
 - **Deterministic Generation**: Generate consistent colors from strings or seeds
@@ -73,6 +74,14 @@ color = Unmagic::Color::HSL.new(hue: 9, saturation: 100, lightness: 60)
 # From OKLCH
 color = Unmagic::Color.parse("oklch(0.65 0.15 30)")
 color = Unmagic::Color::OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 30)
+
+# From X11 named colors (https://en.wikipedia.org/wiki/X11_color_names)
+color = Unmagic::Color.parse("goldenrod")
+color = Unmagic::Color["red"]
+
+# Named colors are case-insensitive and whitespace-tolerant
+color = Unmagic::Color.parse("Golden Rod")  # Same as "goldenrod"
+color = Unmagic::Color.parse("DARK SLATE BLUE")  # Same as "darkslateblue"
 ```
 
 ### Converting Between Color Spaces

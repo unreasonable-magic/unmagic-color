@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/CHANGELOG.md"
 
-  spec.files = Dir["lib/**/*", "README.md", "LICENSE", "CHANGELOG.md"]
+  spec.files = Dir["lib/**/*", "data/**/*", "README.md", "LICENSE", "CHANGELOG.md"]
   spec.require_paths = ["lib"]
 
   spec.required_ruby_version = ">= 3.0"
