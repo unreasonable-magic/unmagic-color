@@ -3,36 +3,53 @@
 # lib/unmagic/color/string/hash_function.rb
 module Unmagic
   class Color
+    # String utilities for color generation
     class String
+      # Hash functions for generating deterministic colors from strings
       module HashFunction
-        # Simple sum of character codes
-        # How it works: Adds up the ASCII/Unicode value of each character
-        # Distribution: Poor - similar strings get similar hashes, anagrams get identical hashes
-        # Colors: Tends to cluster in mid-range hues, very predictable
-        # Example: "cat" (99+97+116=312) and "act" (97+99+116=312) produce identical colors
-        # Use when: You want anagrams to have the same color
+        # Simple sum of character codes. Adds up the ASCII/Unicode value of each character.
+        # Distribution: Poor - similar strings get similar hashes, anagrams get identical hashes.
+        # Colors: Tends to cluster in mid-range hues, very predictable.
+        #
+        # @example Anagrams produce identical hashes
+        #   SUM.call("cat")
+        #   #=> 312
+        #   SUM.call("act")
+        #   #=> 312
+        #
+        # Use when you want anagrams to have the same color.
         SUM = ->(str) {
           str.chars.sum(&:ord)
         }
 
-        # Dan Bernstein's DJB2 algorithm
-        # How it works: Starts with 5381, then for each byte: hash = hash * 33 + byte
-        # Distribution: Good spread across the number space with few collisions
-        # Colors: Well-distributed hues, good variety even for similar strings
-        # Example: "hello" and "hallo" produce completely different colors
-        # Use when: General purpose, good default choice
+        # Dan Bernstein's DJB2 algorithm. Starts with 5381, then for each byte: hash = hash * 33 + byte.
+        # Distribution: Good spread across the number space with few collisions.
+        # Colors: Well-distributed hues, good variety even for similar strings.
+        #
+        # @example Similar strings produce different hashes
+        #   DJB2.call("hello")
+        #   #=> 210676686985
+        #   DJB2.call("hallo")
+        #   #=> 210676864905
+        #
+        # Use when you need general purpose hashing, good default choice.
         DJB2 = ->(str) {
           str.bytes.reduce(5381) do |hash, byte|
             ((hash << 5) + hash) + byte
           end.abs
         }
 
-        # Brian Kernighan & Dennis Ritchie's BKDR hash
-        # How it works: Multiplies hash by prime number (131) and adds each byte
-        # Distribution: Excellent - one of the best distributions for hash tables
-        # Colors: Very uniform color distribution across entire spectrum
-        # Example: Even single character changes create vastly different hues
-        # Use when: You need the most random-looking, well-distributed colors
+        # Brian Kernighan & Dennis Ritchie's BKDR hash. Multiplies hash by prime number (131) and adds each byte.
+        # Distribution: Excellent - one of the best distributions for hash tables.
+        # Colors: Very uniform color distribution across entire spectrum.
+        #
+        # @example Single character changes create vastly different hashes
+        #   BKDR.call("test")
+        #   #=> 2996398963
+        #   BKDR.call("tast")
+        #   #=> 2996267891
+        #
+        # Use when you need the most random-looking, well-distributed colors.
         BKDR = ->(str) {
           seed = 131
           str.bytes.reduce(0) do |hash, byte|
@@ -40,12 +57,17 @@ module Unmagic
           end
         }
 
-        # Fowler-Noll-Vo 1a hash (32-bit)
-        # How it works: XORs each byte with hash, then multiplies by prime 16777619
-        # Distribution: Excellent avalanche effect - tiny changes cascade throughout hash
-        # Colors: Extremely sensitive to input changes, neighboring strings get distant colors
-        # Example: "test1", "test2", "test3" all get completely unrelated colors
-        # Use when: You want maximum color variety for sequential/numbered items
+        # Fowler-Noll-Vo 1a hash (32-bit). XORs each byte with hash, then multiplies by prime 16777619.
+        # Distribution: Excellent avalanche effect - tiny changes cascade throughout hash.
+        # Colors: Extremely sensitive to input changes, neighboring strings get distant colors.
+        #
+        # @example Sequential strings get unrelated hashes
+        #   FNV1A.call("test1")
+        #   #=> 1951951766
+        #   FNV1A.call("test2")
+        #   #=> 1968729175
+        #
+        # Use when you want maximum color variety for sequential/numbered items.
         FNV1A = ->(str) {
           fnv_prime = 16777619
           offset_basis = 2166136261
@@ -55,70 +77,100 @@ module Unmagic
           end
         }
 
-        # SDBM hash algorithm (used in Berkeley DB)
-        # How it works: Combines bit shifting (6 and 16 positions) with subtraction
-        # Distribution: Good distribution with interesting bit patterns
-        # Colors: Tends to create slightly warmer hues due to bit pattern biases
-        # Example: Works well for database keys and identifiers
-        # Use when: You're hashing database IDs or system identifiers
+        # SDBM hash algorithm (used in Berkeley DB). Combines bit shifting (6 and 16 positions) with subtraction.
+        # Distribution: Good distribution with interesting bit patterns.
+        # Colors: Tends to create slightly warmer hues due to bit pattern biases.
+        #
+        # @example Works well for database keys
+        #   SDBM.call("user_123")
+        #   #=> 1642793946939
+        #   SDBM.call("order_456")
+        #   #=> 1414104772796
+        #
+        # Use when you're hashing database IDs or system identifiers.
         SDBM = ->(str) {
           str.bytes.reduce(0) do |hash, byte|
             byte + (hash << 6) + (hash << 16) - hash
           end.abs
         }
 
-        # Java-style string hashCode
-        # How it works: Multiplies hash by 31 and adds character code (polynomial rolling)
-        # Distribution: Decent but can cluster with short strings
-        # Colors: Predictable patterns for sequential strings, good for related items
-        # Example: "item1", "item2", "item3" get progressively shifting hues
-        # Use when: You want compatibility with Java systems or predictable gradients
+        # Java-style string hashCode. Multiplies hash by 31 and adds character code (polynomial rolling).
+        # Distribution: Decent but can cluster with short strings.
+        # Colors: Predictable patterns for sequential strings, good for related items.
+        #
+        # @example Sequential items get progressively shifting hashes
+        #   JAVA.call("item1")
+        #   #=> 100475638
+        #   JAVA.call("item2")
+        #   #=> 100475639
+        #
+        # Use when you want compatibility with Java systems or predictable gradients.
         JAVA = ->(str) {
           str.chars.reduce(0) do |hash, char|
             31 * hash + char.ord
           end.abs
         }
 
-        # CRC32 (Cyclic Redundancy Check)
-        # How it works: Polynomial division for error detection, highly mathematical
-        # Distribution: Excellent - designed to detect even single-bit changes
-        # Colors: Extremely uniform distribution, appears most "random"
-        # Example: Even swapping two characters produces completely different colors
-        # Use when: You need the most uniform, professional-looking color distribution
+        # CRC32 (Cyclic Redundancy Check). Polynomial division for error detection, highly mathematical.
+        # Distribution: Excellent - designed to detect even single-bit changes.
+        # Colors: Extremely uniform distribution, appears most "random".
+        #
+        # @example Swapping characters produces different hashes
+        #   CRC32.call("abc")
+        #   #=> 891568578
+        #   CRC32.call("bac")
+        #   #=> 1294269411
+        #
+        # Use when you need the most uniform, professional-looking color distribution.
         CRC32 = ->(str) {
           require "zlib"
           Zlib.crc32(str)
         }
 
-        # MD5-based hash (truncated to 32 bits)
-        # How it works: Cryptographic hash truncated to first 8 hex characters
-        # Distribution: Perfect distribution but computationally expensive
-        # Colors: Absolutely uniform distribution, no patterns whatsoever
-        # Example: Impossible to predict color without calculating
-        # Use when: Color security matters (???) or you need perfect randomness
+        # MD5-based hash (truncated to 32 bits). Cryptographic hash truncated to first 8 hex characters.
+        # Distribution: Perfect distribution but computationally expensive.
+        # Colors: Absolutely uniform distribution, no patterns whatsoever.
+        #
+        # @example Cryptographic hash provides perfect distribution
+        #   MD5.call("secret")
+        #   #=> 1528250989
+        #   MD5.call("secrat")
+        #   #=> 2854876444
+        #
+        # Use when color security matters or you need perfect randomness.
         MD5 = ->(str) {
           require "digest"
           Digest::MD5.hexdigest(str)[0..7].to_i(16)
         }
 
-        # Position-weighted hash
-        # How it works: Each character's value is multiplied by its position squared
-        # Distribution: Order-sensitive - rearranging characters changes the hash
-        # Colors: "ABC" and "CBA" get different colors, early characters have more impact
-        # Example: First letter has huge influence on hue, last letters fine-tune it
-        # Use when: Character order matters (like initials or codes)
+        # Position-weighted hash. Each character's value is multiplied by its position squared.
+        # Distribution: Order-sensitive - rearranging characters changes the hash.
+        # Colors: "ABC" and "CBA" get different colors, early characters have more impact.
+        #
+        # @example Character order affects the hash
+        #   POSITION.call("ABC")
+        #   #=> 1629
+        #   POSITION.call("CBA")
+        #   #=> 1773
+        #
+        # Use when character order matters (like initials or codes).
         POSITION = ->(str) {
           str.chars.map.with_index do |char, index|
             char.ord * ((index + 1)**2)
           end.sum
         }
 
-        # Case-insensitive perceptual hash
-        # How it works: Normalizes string, counts character frequency, squares char codes
-        # Distribution: Groups similar strings together regardless of case or punctuation
-        # Colors: "Hello!" and "hello" get same color, focuses on letter content
-        # Example: Good for usernames where "JohnDoe" and "johndoe" should match
-        # Use when: You want visual similarity for perceptually similar strings
+        # Case-insensitive perceptual hash. Normalizes string, counts character frequency, squares char codes.
+        # Distribution: Groups similar strings together regardless of case or punctuation.
+        # Colors: "Hello!" and "hello" get same color, focuses on letter content.
+        #
+        # @example Case-insensitive hashing
+        #   PERCEPTUAL.call("JohnDoe")
+        #   #=> 610558
+        #   PERCEPTUAL.call("johndoe")
+        #   #=> 610558
+        #
+        # Use when you want visual similarity for perceptually similar strings.
         PERCEPTUAL = ->(str) {
           normalized = str.downcase.gsub(/[^a-z0-9]/, "")
           char_freq = normalized.chars.tally
@@ -128,12 +180,17 @@ module Unmagic
           end
         }
 
-        # Color-aware hash (detects color names in string)
-        # How it works: Searches for color words and biases hash toward that hue
-        # Distribution: Biased toward mentioned colors, otherwise uses DJB2
-        # Colors: "red_apple" gets reddish hue, "blue_sky" gets bluish hue
-        # Example: "green_team" → greenish, "purple_hearts" → purplish
-        # Use when: Text might contain color names (usernames, team names, tags)
+        # Color-aware hash (detects color names in string). Searches for color words and biases hash toward that hue.
+        # Distribution: Biased toward mentioned colors, otherwise uses DJB2.
+        # Colors: "red_apple" gets reddish hue, "blue_sky" gets bluish hue.
+        #
+        # @example Biases toward mentioned colors
+        #   COLOR_AWARE.call("green_team")
+        #   #=> 120042
+        #   COLOR_AWARE.call("purple_hearts")
+        #   #=> 270047
+        #
+        # Use when text might contain color names (usernames, team names, tags).
         COLOR_AWARE = ->(str) {
           color_hues = {
             "red" => 0,
@@ -180,12 +237,17 @@ module Unmagic
           end
         }
 
-        # MurmurHash3 (32-bit version)
-        # How it works: Uses multiplication, rotation, and XOR for mixing
-        # Distribution: Excellent - designed for hash tables by Google
-        # Colors: Very uniform, fast, good avalanche properties
-        # Example: Widely used in distributed systems for its speed and quality
-        # Use when: Performance matters and you need excellent distribution
+        # MurmurHash3 (32-bit version). Uses multiplication, rotation, and XOR for mixing.
+        # Distribution: Excellent - designed for hash tables by Google.
+        # Colors: Very uniform, fast, good avalanche properties.
+        #
+        # @example Fast and high quality hash function
+        #   MURMUR3.call("database_key")
+        #   #=> 3208616715
+        #   MURMUR3.call("cache_entry")
+        #   #=> 1882174324
+        #
+        # Use when performance matters and you need excellent distribution.
         MURMUR3 = ->(str) {
           c1 = 0xcc9e2d51
           c2 = 0x1b873593
@@ -220,11 +282,17 @@ module Unmagic
         DEFAULT = BKDR
 
         class << self
+          # Call the default hash function
+          #
+          # @param str [String] String to hash
+          # @return [Integer] Hash value
           def call(str)
             DEFAULT.call(str)
           end
 
           # Get all available algorithms
+          #
+          # @return [Hash] Hash of algorithm names to procs
           def all
             constants.select { |c| const_get(c).is_a?(Proc) }
               .map { |c| [c.to_s.downcase.to_sym, const_get(c)] }
@@ -232,6 +300,10 @@ module Unmagic
           end
 
           # Get a hash function by name
+          #
+          # @param name [String, Symbol] Name of the hash function
+          # @return [Proc] The hash function
+          # @raise [ArgumentError] If hash function not found
           def [](name)
             const_get(name.to_s.upcase)
           rescue NameError

@@ -72,6 +72,7 @@ module Unmagic
     #     # Generate color from text
     #     Unmagic::Color::HSL.derive("user@example.com".hash)  # Consistent color
     class HSL < Color
+      # Error raised when parsing HSL color strings fails
       class ParseError < Color::Error; end
 
       attr_reader :hue, :saturation, :lightness

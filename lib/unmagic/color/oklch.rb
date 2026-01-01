@@ -74,6 +74,7 @@ module Unmagic
     #     # Generate consistent colors
     #     Unmagic::Color::OKLCH.derive("user@example.com".hash)  # Perceptually balanced color
     class OKLCH < Color
+      # Error raised when parsing OKLCH color strings fails
       class ParseError < Color::Error; end
 
       attr_reader :chroma, :hue
@@ -220,10 +221,9 @@ module Unmagic
 
       # Convert to RGB color space.
       #
-      # Note: This is currently a simplified approximation. A proper OKLCH to sRGB
-      # conversion requires more complex color science calculations.
-      #
       # @return [RGB] The color in RGB color space (approximation)
+      # @note This is currently a simplified approximation. A proper OKLCH to sRGB
+      #   conversion requires more complex color science calculations.
       def to_rgb
         # For now, convert via approximation - would need proper OKLCH->sRGB conversion
         # This is a simplified placeholder that approximates RGB from OKLCH

@@ -13,6 +13,7 @@ AllValidators:
     - 'node_modules/**/*'
     - 'spec/**/*'
     - 'test/**/*'
+    - 'docs/**/*'
 
   # Exit code behavior (error, warning, convention, never)
   FailOnSeverity: warning
@@ -49,6 +50,15 @@ Documentation/UndocumentedMethodArguments:
   Description: 'Checks for method parameters without @param tags.'
   Enabled: true
   Severity: convention
+  ExcludedMethods:
+    - 'initialize/1'  # Exclude single-parameter initialize (Data.define)
+    - '/^_/'          # Exclude private methods (by convention)
+    - '<=>'           # Exclude comparison operators
+    - '*'             # Exclude arithmetic operators
+    - '/'
+    - '+'
+    - '-'
+    - 'abs'
 
 Documentation/UndocumentedBooleanMethods:
   Description: 'Checks that question mark methods document their boolean return.'

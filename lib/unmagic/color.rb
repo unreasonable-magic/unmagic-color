@@ -110,10 +110,10 @@ module Unmagic
     end
 
     # Base unit for RGB components (0-255)
-    # @private
     Component = Data.define(:value) do
       include Comparable
 
+      # @param value [Numeric] Component value (0-255)
       def initialize(value:)
         super(value: value.to_i.clamp(0, 255))
       end
@@ -121,6 +121,8 @@ module Unmagic
       def to_i = value
       def to_f = value.to_f
 
+      # @param other [Component, Numeric] Value to compare
+      # @return [Integer, nil] Comparison result
       def <=>(other)
         case other
         when Component, Numeric
@@ -128,40 +130,48 @@ module Unmagic
         end
       end
 
-      # Arithmetic operations that return new instances
+      # @param other [Numeric] Multiplier
+      # @return [Component] New component
       def *(other)
         self.class.new(value: value * other.to_f)
       end
 
+      # @param other [Numeric] Divisor
+      # @return [Component] New component
       def /(other)
         self.class.new(value: value / other.to_f)
       end
 
+      # @param other [Numeric] Value to add
+      # @return [Component] New component
       def +(other)
         self.class.new(value: value + other.to_f)
       end
 
+      # @param other [Numeric] Value to subtract
+      # @return [Component] New component
       def -(other)
         self.class.new(value: value - other.to_f)
       end
 
+      # @return [Component] Absolute value
       def abs
         self.class.new(value: value.abs)
       end
     end
 
-    # @private
+    # Type alias for red component
     Red = Component
-    # @private
+    # Type alias for green component
     Green = Component
-    # @private
+    # Type alias for blue component
     Blue = Component
 
     # Angular unit for hue (0-360 degrees, wrapping)
-    # @private
     Hue = Data.define(:value) do
       include Comparable
 
+      # @param value [Numeric] Hue value in degrees
       def initialize(value:)
         super(value: value.to_f % 360)
       end
@@ -169,6 +179,8 @@ module Unmagic
       def to_f = value
       def degrees = value
 
+      # @param other [Hue, Numeric] Value to compare
+      # @return [Integer, nil] Comparison result
       def <=>(other)
         case other
         when Hue, Numeric
@@ -176,39 +188,50 @@ module Unmagic
         end
       end
 
-      # Arithmetic operations that return new instances
+      # @param other [Numeric] Multiplier
+      # @return [Hue] New hue
       def *(other)
         self.class.new(value: value * other.to_f)
       end
 
+      # @param other [Numeric] Divisor
+      # @return [Hue] New hue
       def /(other)
         self.class.new(value: value / other.to_f)
       end
 
+      # @param other [Numeric] Value to add
+      # @return [Hue] New hue
       def +(other)
         self.class.new(value: value + other.to_f)
       end
 
+      # @param other [Numeric] Value to subtract
+      # @return [Hue] New hue
       def -(other)
         self.class.new(value: value - other.to_f)
       end
 
+      # @return [Hue] Absolute value
       def abs
         self.class.new(value: value.abs)
       end
     end
 
     # OKLCH chroma unit (0-0.5)
-    # @private
     Chroma = Data.define(:value) do
       include Comparable
 
+      # @param value [Numeric] Chroma value (0-0.5)
       def initialize(value:)
         super(value: value.to_f.clamp(0, 0.5))
       end
 
+      # @return [Float] Chroma value
       def to_f = value
 
+      # @param other [Chroma, Numeric] Value to compare
+      # @return [Integer, nil] Comparison result
       def <=>(other)
         case other
         when Chroma, Numeric
@@ -216,32 +239,40 @@ module Unmagic
         end
       end
 
-      # Arithmetic operations that return new instances
+      # @param other [Numeric] Multiplier
+      # @return [Chroma] New chroma
       def *(other)
         self.class.new(value: value * other.to_f)
       end
 
+      # @param other [Numeric] Divisor
+      # @return [Chroma] New chroma
       def /(other)
         self.class.new(value: value / other.to_f)
       end
 
+      # @param other [Numeric] Value to add
+      # @return [Chroma] New chroma
       def +(other)
         self.class.new(value: value + other.to_f)
       end
 
+      # @param other [Numeric] Value to subtract
+      # @return [Chroma] New chroma
       def -(other)
         self.class.new(value: value - other.to_f)
       end
 
+      # @return [Chroma] Absolute value
       def abs
         self.class.new(value: value.abs)
       end
     end
 
     # Percentage-based units
-    # @private
+    # Saturation percentage (0-100%)
     class Saturation < Unmagic::Util::Percentage; end
-    # @private
+    # Lightness percentage (0-100%)
     class Lightness < Unmagic::Util::Percentage; end
 
     # Convert this color to RGB color space.

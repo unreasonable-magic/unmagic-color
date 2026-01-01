@@ -14,9 +14,9 @@ begin
     task.pattern = "lib/**/*.rb"
   end
 
-  desc "Start YARD documentation server with auto-reload"
-  task :server do
-    sh "bundle exec yard server --reload"
+  desc("Start YARD documentation server with auto-reload")
+  task(:server) do
+    sh("bundle exec yard server --reload")
   end
 rescue LoadError
   # yard-doctest not available

@@ -54,6 +54,7 @@ module Unmagic
     #     # Generate deterministic colors from text
     #     Unmagic::Color::RGB.derive("user@example.com".hash)  #=> Consistent color for this string
     class RGB < Color
+      # Error raised when parsing RGB color strings fails
       class ParseError < Color::Error; end
 
       attr_reader :red, :green, :blue
@@ -164,6 +165,10 @@ module Unmagic
         end
 
         # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
+        #
+        # @param input [String] RGB string to parse
+        # @return [RGB] Parsed RGB color
+        # @raise [ParseError] If format is invalid
         def parse_rgb_format(input)
           # Remove rgb() wrapper if present
           clean = input.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
@@ -261,9 +266,9 @@ module Unmagic
       # Convert to OKLCH color space.
       #
       # Converts this RGB color to OKLCH (Lightness, Chroma, Hue).
-      # Note: This is currently a simplified approximation.
       #
       # @return [OKLCH] The color in OKLCH color space
+      # @note This is currently a simplified approximation.
       def to_oklch
         # For now, simple approximation based on RGB -> HSL -> OKLCH
         # This is a simplified placeholder

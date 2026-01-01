@@ -30,6 +30,7 @@ module Unmagic
       # - `#F00` = `#FF0000` (short form)
       # - `#ABC` = `#AABBCC` (short form expanded)
       class Hex
+        # Error raised when parsing hex color strings fails
         class ParseError < Color::Error; end
 
         class << self

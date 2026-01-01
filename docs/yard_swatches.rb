@@ -12,9 +12,9 @@ module YardSwatches
     # Use postprocess to add swatches outside of code blocks
     def postprocess(html)
       # Find <code> blocks that contain only a hex color
-      html.gsub(/<code>(#{HEX_RE})<\/code>/) do
+      html.gsub(%r{<code>(#{HEX_RE})</code>}) do
         hex = Regexp.last_match(1)
-        swatch = %Q(<span aria-hidden="true" style="display:inline-block;width:.9em;height:.9em;margin-right:.35em;vertical-align:-0.1em;border:1px solid rgba(0,0,0,.25);border-radius:3px;background:#{hex};"></span>)
+        swatch = %(<span aria-hidden="true" style="display:inline-block;width:.9em;height:.9em;margin-right:.35em;vertical-align:-0.1em;border:1px solid rgba(0,0,0,.25);border-radius:3px;background:#{hex};"></span>)
         "#{swatch}<code>#{hex}</code>"
       end
     end
@@ -33,7 +33,7 @@ module YardSwatches
         fenced_code_blocks: true,
         tables: true,
         strikethrough: true,
-        lax_spacing: true
+        lax_spacing: true,
       )
       markdown.render(@text)
     end
@@ -44,5 +44,6 @@ end
 # use our document class instead of the default.
 YARD::Templates::Helpers::MarkupHelper::MARKUP_PROVIDERS[:markdown].each do |provider|
   next unless provider[:lib] == :redcarpet
+
   provider[:const] = "YardSwatches::RedcarpetDocument"
 end
