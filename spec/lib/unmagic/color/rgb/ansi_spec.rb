@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe(Unmagic::Color::RGB::Ansi) do
+RSpec.describe(Unmagic::Color::RGB::ANSI) do
   describe ".parse" do
     context "with standard 3/4-bit colors" do
       it "parses foreground colors (30-37)" do
@@ -118,59 +118,59 @@ RSpec.describe(Unmagic::Color::RGB::Ansi) do
       it "raises ParseError for empty string" do
         expect do
           described_class.parse("")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Can't parse empty string/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Can't parse empty string/))
       end
 
-      it "raises ParseError for non-string input" do
+      it "raises ParseError for invalid input type" do
         expect do
-          described_class.parse(31)
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Input must be a string/))
+          described_class.parse(nil)
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Input must be a string or integer/))
       end
 
       it "raises ParseError for invalid format" do
         expect do
           described_class.parse("abc")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Invalid ANSI format/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Invalid ANSI format/))
       end
 
       it "raises ParseError for unknown color code" do
         expect do
           described_class.parse("99")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Unknown ANSI color code/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Unknown ANSI color code/))
       end
 
       it "raises ParseError for invalid 256-color index" do
         expect do
           described_class.parse("38;5;256")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /256-color index must be 0-255/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /256-color index must be 0-255/))
       end
 
       it "raises ParseError for invalid true color RGB values" do
         expect do
           described_class.parse("38;2;300;0;0")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Red must be 0-255/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Red must be 0-255/))
 
         expect do
           described_class.parse("38;2;0;256;0")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Green must be 0-255/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Green must be 0-255/))
       end
 
       it "raises ParseError for incomplete 256-color format" do
         expect do
           described_class.parse("38;5")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Extended color format requires at least 3 parameters|256-color format requires 3 parameters/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Extended color format requires at least 3 parameters|256-color format requires 3 parameters/))
       end
 
       it "raises ParseError for incomplete true color format" do
         expect do
           described_class.parse("38;2;255;0")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /True color format requires 5 parameters/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /True color format requires 5 parameters/))
       end
 
       it "raises ParseError for unknown extended color type" do
         expect do
           described_class.parse("38;9;100")
-        end.to(raise_error(Unmagic::Color::RGB::Ansi::ParseError, /Unknown extended color type: 9/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Unknown extended color type: 9/))
       end
     end
 

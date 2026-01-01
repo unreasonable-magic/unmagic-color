@@ -93,8 +93,8 @@ module Unmagic
           HSL.parse(input)
         elsif input.start_with?("oklch")
           OKLCH.parse(input)
-        elsif input.match?(/\A\d+(?:;\d+)*\z/) && RGB::Ansi.valid?(input)
-          RGB::Ansi.parse(input)
+        elsif input.match?(/\A\d+(?:;\d+)*\z/) && RGB::ANSI.valid?(input)
+          RGB::ANSI.parse(input)
         elsif RGB::Named.valid?(input)
           RGB::Named.parse(input)
         else

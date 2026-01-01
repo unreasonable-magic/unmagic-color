@@ -108,8 +108,8 @@ module Unmagic
           input = input.strip
 
           # Check for ANSI format first (numeric with optional semicolons)
-          if input.match?(/\A\d+(?:;\d+)*\z/) && Ansi.valid?(input)
-            return Ansi.parse(input)
+          if input.match?(/\A\d+(?:;\d+)*\z/) && ANSI.valid?(input)
+            return ANSI.parse(input)
           end
 
           # Check if it looks like a hex color (starts with # or only contains hex digits)
