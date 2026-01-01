@@ -142,17 +142,20 @@ RSpec.describe(Unmagic::Color::RGB::ANSI) do
       it "raises ParseError for invalid 256-color index" do
         expect do
           described_class.parse("38;5;256")
-        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /256-color index must be 0-255/))
+        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Invalid 256-color index/))
       end
 
-      it "raises ParseError for invalid true color RGB values" do
-        expect do
-          described_class.parse("38;2;300;0;0")
-        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Red must be 0-255/))
+      it "clamps out-of-range true color RGB values" do
+        # RGB.new automatically clamps values to 0-255
+        result = described_class.parse("38;2;300;0;0")
+        expect(result.red.value).to(eq(255))
+        expect(result.green.value).to(eq(0))
+        expect(result.blue.value).to(eq(0))
 
-        expect do
-          described_class.parse("38;2;0;256;0")
-        end.to(raise_error(Unmagic::Color::RGB::ANSI::ParseError, /Green must be 0-255/))
+        result = described_class.parse("38;2;0;256;0")
+        expect(result.red.value).to(eq(0))
+        expect(result.green.value).to(eq(255))
+        expect(result.blue.value).to(eq(0))
       end
 
       it "raises ParseError for incomplete 256-color format" do
