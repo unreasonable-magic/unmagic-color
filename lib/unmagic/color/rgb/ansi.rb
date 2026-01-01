@@ -56,7 +56,10 @@ module Unmagic
           # @return [RGB] The parsed RGB color
           # @raise [ParseError] If the input is not a valid ANSI color code
           def parse(input)
-            raise ParseError, "Input must be a string" unless input.is_a?(::String)
+            raise ParseError, "Input must be a string or integer" unless input.is_a?(::String) || input.is_a?(::Integer)
+
+            # Convert integers to strings
+            input = input.to_s if input.is_a?(::Integer)
 
             # Strip and validate format
             clean = input.strip

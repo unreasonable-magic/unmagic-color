@@ -185,6 +185,28 @@ RSpec.describe(Unmagic::Color::RGB::ANSI) do
         expect(result.to_hex).to(eq("#ff0000"))
       end
     end
+
+    context "with integer input" do
+      it "parses integer ANSI codes" do
+        result = described_class.parse(31)
+        expect(result.to_hex).to(eq("#ff0000"))
+      end
+
+      it "parses background color integers" do
+        result = described_class.parse(41)
+        expect(result.to_hex).to(eq("#ff0000"))
+      end
+
+      it "parses bright color integers" do
+        result = described_class.parse(91)
+        expect(result.to_hex).to(eq("#ff0000"))
+      end
+
+      it "parses bright background color integers" do
+        result = described_class.parse(101)
+        expect(result.to_hex).to(eq("#ff0000"))
+      end
+    end
   end
 
   describe ".valid?" do
@@ -229,109 +251,6 @@ RSpec.describe(Unmagic::Color::RGB::ANSI) do
     it "parses with bracket notation" do
       color = Unmagic::Color["38;2;255;0;0"]
       expect(color.to_hex).to(eq("#ff0000"))
-    end
-  end
-end
-
-RSpec.describe(Unmagic::Color::RGB) do
-  describe "#to_ansi" do
-    context "with standard ANSI colors" do
-      it "returns standard ANSI codes for exact matches" do
-        expect(described_class.new(red: 0, green: 0, blue: 0).to_ansi).to(eq("30"))       # black
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi).to(eq("31"))     # red
-        expect(described_class.new(red: 0, green: 255, blue: 0).to_ansi).to(eq("32"))     # green
-        expect(described_class.new(red: 255, green: 255, blue: 0).to_ansi).to(eq("33"))   # yellow
-        expect(described_class.new(red: 0, green: 0, blue: 255).to_ansi).to(eq("34"))     # blue
-        expect(described_class.new(red: 255, green: 0, blue: 255).to_ansi).to(eq("35"))   # magenta
-        expect(described_class.new(red: 0, green: 255, blue: 255).to_ansi).to(eq("36"))   # cyan
-        expect(described_class.new(red: 255, green: 255, blue: 255).to_ansi).to(eq("37")) # white
-      end
-
-      it "returns background codes with layer: :background" do
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(layer: :background)).to(eq("41"))
-        expect(described_class.new(red: 0, green: 255, blue: 0).to_ansi(layer: :background)).to(eq("42"))
-      end
-    end
-
-    context "with true color format" do
-      it "returns 24-bit true color for non-standard colors" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi
-        expect(result).to(eq("38;2;100;150;200"))
-      end
-
-      it "returns background true color with layer: :background" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(layer: :background)
-        expect(result).to(eq("48;2;100;150;200"))
-      end
-
-      it "uses true color for colors close to but not exactly ANSI colors" do
-        # Almost red, but not exactly
-        result = described_class.new(red: 254, green: 0, blue: 0).to_ansi
-        expect(result).to(eq("38;2;254;0;0"))
-      end
-    end
-
-    context "with error handling" do
-      it "raises ArgumentError for invalid layer" do
-        color = described_class.new(red: 255, green: 0, blue: 0)
-        expect do
-          color.to_ansi(layer: :invalid)
-        end.to(raise_error(ArgumentError, /layer must be :foreground or :background/))
-      end
-    end
-
-    context "with integration with parsed colors" do
-      it "works with hex-parsed colors" do
-        color = Unmagic::Color.parse("#ff0000")
-        expect(color.to_ansi).to(eq("31"))
-      end
-
-      it "works with named colors" do
-        color = Unmagic::Color.parse("red")
-        expect(color.to_ansi).to(eq("31"))
-      end
-
-      it "works with ANSI-parsed colors" do
-        color = Unmagic::Color.parse("31")
-        expect(color.to_ansi).to(eq("31"))
-      end
-    end
-  end
-end
-
-RSpec.describe(Unmagic::Color::HSL) do
-  describe "#to_ansi" do
-    it "delegates to RGB#to_ansi" do
-      color = described_class.new(hue: 0, saturation: 100, lightness: 50)
-      expect(color.to_ansi).to(eq("31")) # Pure red
-    end
-
-    it "supports background layer" do
-      color = described_class.new(hue: 0, saturation: 100, lightness: 50)
-      expect(color.to_ansi(layer: :background)).to(eq("41"))
-    end
-
-    it "uses true color for non-standard colors" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: 50)
-      result = color.to_ansi
-      expect(result).to(match(/\A38;2;\d+;\d+;\d+\z/))
-    end
-  end
-end
-
-RSpec.describe(Unmagic::Color::OKLCH) do
-  describe "#to_ansi" do
-    it "delegates to RGB#to_ansi" do
-      # This will convert to approximately red
-      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
-      result = color.to_ansi
-      expect(result).to(match(/\A(?:3[0-7]|38;2;\d+;\d+;\d+)\z/))
-    end
-
-    it "supports background layer" do
-      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
-      result = color.to_ansi(layer: :background)
-      expect(result).to(match(/\A(?:4[0-7]|48;2;\d+;\d+;\d+)\z/))
     end
   end
 end
