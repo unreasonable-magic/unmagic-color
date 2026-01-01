@@ -379,6 +379,21 @@ module Unmagic
         "hsl(#{@hue.value.round}, #{@saturation.value}%, #{@lightness.value}%)"
       end
 
+      # Convert to ANSI SGR color code.
+      #
+      # Converts to RGB first, then generates the ANSI code.
+      #
+      # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
+      # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
+      #
+      # @example
+      #   color = HSL.new(hue: 0, saturation: 100, lightness: 50)
+      #   color.to_ansi
+      #   # => "31"
+      def to_ansi(layer: :foreground)
+        to_rgb.to_ansi(layer: layer)
+      end
+
       private
 
       def hsl_to_rgb
