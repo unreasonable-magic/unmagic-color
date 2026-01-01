@@ -148,32 +148,14 @@ module Unmagic
           def parse_256_color(parts)
             raise ParseError, "256-color format requires 3 parameters (e.g., 38;5;N)" unless parts.length == 3
 
-            index = parts[2]
-
-            if index < 0 || index > 255
-              raise ParseError, "256-color index must be 0-255, got #{index}"
-            end
-
-            color_256_to_rgb(index)
+            color_256_to_rgb(parts[2])
           end
 
           # Parse 24-bit true color code
           def parse_true_color(parts)
             raise ParseError, "True color format requires 5 parameters (e.g., 38;2;R;G;B)" unless parts.length == 5
 
-            r = parts[2]
-            g = parts[3]
-            b = parts[4]
-
-            # Validate RGB ranges
-            [r, g, b].each_with_index do |val, i|
-              component = ["red", "green", "blue"][i]
-              if val < 0 || val > 255
-                raise ParseError, "#{component.capitalize} must be 0-255, got #{val}"
-              end
-            end
-
-            RGB.new(red: r, green: g, blue: b)
+            RGB.new(red: parts[2], green: parts[3], blue: parts[4])
           end
 
           # Check if code is a standard 3/4-bit color
