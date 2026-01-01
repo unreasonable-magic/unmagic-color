@@ -3,11 +3,11 @@
 Gem::Specification.new do |spec|
   spec.name        = "unmagic-color"
   spec.version     = "0.1.0"
-  spec.authors     = ["Unmagic"]
-  spec.email       = ["hello@unmagic.ai"]
+  spec.authors     = ["Keith Pitt"]
+  spec.email       = ["keith@unreasonable-magic.com"]
   spec.summary     = "Comprehensive color manipulation library"
   spec.description = "Parse, convert, and manipulate colors with support for RGB, Hex, HSL formats, contrast calculations, and color blending"
-  spec.homepage    = "https://unmagic.ai"
+  spec.homepage    = "https://github.com/unreasonable-magic/unmagic-color"
   spec.license     = "MIT"
 
   spec.metadata["homepage_uri"] = spec.homepage
