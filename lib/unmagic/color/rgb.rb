@@ -30,6 +30,7 @@ module Unmagic
     # - Hex: `#FF5733` (2 hex digits per component: `FF=255, 57=87, 33=51`)
     # - Short hex: `#F73` (expanded to `#FF7733`)
     # - RGB function: `rgb(255, 87, 51)`
+    # - Named colors: `goldenrod`, `red`, `blue` (see {RGB::Named} for X11 color names)
     #
     # ## Usage Examples
     #
@@ -37,6 +38,10 @@ module Unmagic
     #     color = Unmagic::Color::RGB.parse("#FF5733")
     #     color = Unmagic::Color::RGB.parse("rgb(255, 87, 51)")
     #     color = Unmagic::Color::RGB.parse("F73")
+    #
+    #     # Parse named colors (via RGB::Named or Color.parse)
+    #     color = Unmagic::Color::RGB::Named.parse("goldenrod")
+    #     color = Unmagic::Color.parse("goldenrod")  # Also works
     #
     #     # Create directly
     #     color = Unmagic::Color::RGB.new(red: 255, green: 87, blue: 51)
