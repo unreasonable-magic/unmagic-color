@@ -11,35 +11,50 @@ module Unmagic
       # ## Supported Formats
       #
       # Standard 3/4-bit colors (foreground and background):
-      #   Ansi.parse("31")        # Red foreground
-      #   Ansi.parse("41")        # Red background
-      #   Ansi.parse("91")        # Bright red foreground
-      #   Ansi.parse("101")       # Bright red background
+      #
+      #     Unmagic::Color::RGB::ANSI.parse("31")        # Red foreground
+      #     Unmagic::Color::RGB::ANSI.parse("41")        # Red background
+      #     Unmagic::Color::RGB::ANSI.parse("91")        # Bright red foreground
+      #     Unmagic::Color::RGB::ANSI.parse("101")       # Bright red background
       #
       # 256-color palette:
-      #   Ansi.parse("38;5;196")  # Red foreground (256-color)
-      #   Ansi.parse("48;5;196")  # Red background (256-color)
+      #
+      #     Unmagic::Color::RGB::ANSI.parse("38;5;196")  # Red foreground (256-color)
+      #     Unmagic::Color::RGB::ANSI.parse("48;5;196")  # Red background (256-color)
       #
       # 24-bit true color:
-      #   Ansi.parse("38;2;255;0;0")    # Red foreground (true color)
-      #   Ansi.parse("48;2;255;0;0")    # Red background (true color)
       #
-      # ## Examples
+      #     Unmagic::Color::RGB::ANSI.parse("38;2;255;0;0")    # Red foreground (true color)
+      #     Unmagic::Color::RGB::ANSI.parse("48;2;255;0;0")    # Red background (true color)
       #
-      #   Ansi.parse("31")
+      # @example Parse standard ANSI color
+      #   Unmagic::Color::RGB::ANSI.parse("31")
       #   #=> RGB instance for red
       #
-      #   Ansi.parse("38;2;100;150;200")
+      # @example Parse 24-bit true color
+      #   Unmagic::Color::RGB::ANSI.parse("38;2;100;150;200")
       #   #=> RGB instance for RGB(100, 150, 200)
-      class Ansi
+      class ANSI
         # Error raised when parsing ANSI color codes fails
         class ParseError < Color::Error; end
 
         class << self
-          # Check if a string is a valid ANSI color code.
+          # Check if a string or integer is a valid ANSI color code.
           #
-          # @param value [String] The string to validate
+          # @param value [String, Integer] The value to validate
           # @return [Boolean] true if valid ANSI code, false otherwise
+          #
+          # @example Check string
+          #   Unmagic::Color::RGB::ANSI.valid?("31")
+          #   #=> true
+          #
+          # @example Check integer
+          #   Unmagic::Color::RGB::ANSI.valid?(31)
+          #   #=> true
+          #
+          # @example Invalid input
+          #   Unmagic::Color::RGB::ANSI.valid?("invalid")
+          #   #=> false
           def valid?(value)
             parse(value)
             true
@@ -51,10 +66,28 @@ module Unmagic
           #
           # Accepts SGR parameters only (not full escape sequences).
           # Handles foreground and background colors in all formats.
+          # Integers are automatically converted to strings.
           #
-          # @param input [String] The ANSI code to parse
+          # @param input [String, Integer] The ANSI code to parse
           # @return [RGB] The parsed RGB color
           # @raise [ParseError] If the input is not a valid ANSI color code
+          #
+          # @example Parse standard ANSI color with string
+          #   Unmagic::Color::RGB::ANSI.parse("31")
+          #   #=> Unmagic::Color::RGB instance for red
+          #
+          # @example Parse standard ANSI color with integer
+          #   Unmagic::Color::RGB::ANSI.parse(31)
+          #   #=> Unmagic::Color::RGB instance for red
+          #
+          # @example Parse 256-color palette
+          #   Unmagic::Color::RGB::ANSI.parse("38;5;196")
+          #   #=> Unmagic::Color::RGB instance for bright red
+          #
+          # @example Parse 24-bit true color
+          #   color = Unmagic::Color::RGB::ANSI.parse("38;2;100;150;200")
+          #   color.to_hex
+          #   #=> "#6496c8"
           def parse(input)
             raise ParseError, "Input must be a string or integer" unless input.is_a?(::String) || input.is_a?(::Integer)
 
