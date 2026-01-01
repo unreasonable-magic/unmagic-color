@@ -6,5 +6,6 @@ gemspec
 
 group :development do
   gem "rspec"
-  gem "rubocop-rails-omakase", require: false
+  gem "rubocop-rspec", require: false
+  gem "rubocop-shopify", require: false
 end

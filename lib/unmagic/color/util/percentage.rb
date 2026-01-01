@@ -34,17 +34,17 @@ module Unmagic
           @value = args[0].to_f
         when 2
           numerator, denominator = args
-          if denominator.to_f.zero?
-            @value = 0.0
+          @value = if denominator.to_f.zero?
+            0.0
           else
-            @value = (numerator.to_f / denominator.to_f * 100.0)
+            (numerator.to_f / denominator.to_f * 100.0)
           end
         else
-          raise ArgumentError.new("wrong number of arguments (given #{args.length}, expected 1..2)")
+          raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1..2)"
         end
 
         # Clamp to valid percentage range
-        @value = [ [ 0.0, @value ].max, 100.0 ].min
+        @value = [[0.0, @value].max, 100.0].min
       end
 
       # Format as percentage string with configurable decimal places
@@ -69,8 +69,6 @@ module Unmagic
           @value <=> other.value
         when Numeric
           @value <=> other.to_f
-        else
-          nil
         end
       end
 
@@ -90,11 +88,11 @@ module Unmagic
       def +(other)
         case other
         when Percentage
-          Percentage.new([ value + other.value, 100.0 ].min)
+          Percentage.new([value + other.value, 100.0].min)
         when Numeric
-          Percentage.new([ value + other.to_f, 100.0 ].min)
+          Percentage.new([value + other.to_f, 100.0].min)
         else
-          raise TypeError.new("can't add #{other.class} to Percentage")
+          raise TypeError, "can't add #{other.class} to Percentage"
         end
       end
 
@@ -102,11 +100,11 @@ module Unmagic
       def -(other)
         case other
         when Percentage
-          Percentage.new([ value - other.value, 0.0 ].max)
+          Percentage.new([value - other.value, 0.0].max)
         when Numeric
-          Percentage.new([ value - other.to_f, 0.0 ].max)
+          Percentage.new([value - other.to_f, 0.0].max)
         else
-          raise TypeError.new("can't subtract #{other.class} from Percentage")
+          raise TypeError, "can't subtract #{other.class} from Percentage"
         end
       end
 

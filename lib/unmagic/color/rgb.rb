@@ -15,20 +15,13 @@ module Unmagic
       end
 
       # Return unit instances directly
-      def red = @red
-      def green = @green
-      def blue = @blue
-
-
-      private
-
-
-
-      public
+      attr_reader :red
+      attr_reader :green
+      attr_reader :blue
 
       # Parse RGB string like "rgb(255, 128, 0)" or "255, 128, 0" or hex like "#FF8800" or "FF8800"
       def self.parse(input)
-        raise ParseError.new("Input must be a string") unless input.is_a?(::String)
+        raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
         input = input.strip
 
@@ -44,7 +37,7 @@ module Unmagic
       # Factory: deterministic RGB from integer seed
       # Produces stable colors from hash function output.
       def self.derive(seed, brightness: 180, saturation: 0.7)
-        raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
+        raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
 
         h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
@@ -73,8 +66,6 @@ module Unmagic
         new(red: r, green: g, blue: b)
       end
 
-      private
-
       # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
       def self.parse_rgb_format(input)
         # Remove rgb() wrapper if present
@@ -83,14 +74,14 @@ module Unmagic
         # Split values
         values = clean.split(/\s*,\s*/)
         unless values.length == 3
-          raise ParseError.new("Expected 3 RGB values, got #{values.length}")
+          raise ParseError, "Expected 3 RGB values, got #{values.length}"
         end
 
         # Check if all values are numeric (allow negative for clamping)
         values.each_with_index do |v, i|
           unless v.match?(/\A-?\d+\z/)
-            component = %w[red green blue][i]
-            raise ParseError.new("Invalid #{component} value: #{v.inspect} (must be a number)")
+            component = ["red", "green", "blue"][i]
+            raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
           end
         end
 
@@ -100,8 +91,6 @@ module Unmagic
         new(red: parsed[0], green: parsed[1], blue: parsed[2])
       end
 
-      public
-
       # Convert to RGB representation (returns self)
       def to_rgb
         self
@@ -109,7 +98,7 @@ module Unmagic
 
       # Convert to hex string
       def to_hex
-        "#%02x%02x%02x" % [ @red.value, @green.value, @blue.value ]
+        format("#%02x%02x%02x", @red.value, @green.value, @blue.value)
       end
 
       # Convert to HSL
@@ -118,8 +107,8 @@ module Unmagic
         g = @green.value / 255.0
         b = @blue.value / 255.0
 
-        max = [ r, g, b ].max
-        min = [ r, g, b ].min
+        max = [r, g, b].max
+        min = [r, g, b].min
         delta = max - min
 
         # Lightness
@@ -163,9 +152,9 @@ module Unmagic
         g = @green.value / 255.0
         b = @blue.value / 255.0
 
-        r = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4
-        g = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4
-        b = b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055) ** 2.4
+        r = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055)**2.4
+        g = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055)**2.4
+        b = b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055)**2.4
 
         0.2126 * r + 0.7152 * g + 0.0722 * b
       end
@@ -178,7 +167,7 @@ module Unmagic
         Unmagic::Color::RGB.new(
           red: (@red.value * (1 - amount) + other_rgb.red.value * amount).round,
           green: (@green.value * (1 - amount) + other_rgb.green.value * amount).round,
-          blue: (@blue.value * (1 - amount) + other_rgb.blue.value * amount).round
+          blue: (@blue.value * (1 - amount) + other_rgb.blue.value * amount).round,
         )
       end
 
@@ -191,7 +180,6 @@ module Unmagic
       def darken(amount = 0.1)
         blend(Unmagic::Color::RGB.new(red: 0, green: 0, blue: 0), amount)
       end
-
 
       def ==(other)
         other.is_a?(Unmagic::Color::RGB) &&

@@ -15,10 +15,10 @@ module Unmagic
     class << self
       def parse(input)
         return input if input.is_a?(self)
-        raise ParseError.new("Can't pass nil as a color") if input.nil?
+        raise ParseError, "Can't pass nil as a color" if input.nil?
 
         input = input.strip
-        raise ParseError.new("Can't parse empty string") if input == ""
+        raise ParseError, "Can't parse empty string" if input == ""
 
         # Try hex or RGB format
         if input.start_with?("#") || input.match?(/\A[0-9A-Fa-f]{3,6}\z/) || input.start_with?("rgb")
@@ -28,7 +28,7 @@ module Unmagic
         elsif input.start_with?("oklch")
           OKLCH.parse(input)
         else
-          raise ParseError.new("Unknown color #{input.inspect}")
+          raise ParseError, "Unknown color #{input.inspect}"
         end
       end
 
@@ -52,8 +52,6 @@ module Unmagic
         case other
         when Component, Numeric
           value <=> other.to_f
-        else
-          nil
         end
       end
 
@@ -98,8 +96,6 @@ module Unmagic
         case other
         when Hue, Numeric
           value <=> other.to_f
-        else
-          nil
         end
       end
 
@@ -139,8 +135,6 @@ module Unmagic
         case other
         when Chroma, Numeric
           value <=> other.to_f
-        else
-          nil
         end
       end
 

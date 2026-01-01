@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # lib/unmagic/color/string/hash_function.rb
 module Unmagic
   class Color
@@ -20,9 +22,9 @@ module Unmagic
         # Example: "hello" and "hallo" produce completely different colors
         # Use when: General purpose, good default choice
         DJB2 = ->(str) {
-          str.bytes.reduce(5381) { |hash, byte|
+          str.bytes.reduce(5381) do |hash, byte|
             ((hash << 5) + hash) + byte
-          }.abs
+          end.abs
         }
 
         # Brian Kernighan & Dennis Ritchie's BKDR hash
@@ -33,9 +35,9 @@ module Unmagic
         # Use when: You need the most random-looking, well-distributed colors
         BKDR = ->(str) {
           seed = 131
-          str.bytes.reduce(0) { |hash, byte|
+          str.bytes.reduce(0) do |hash, byte|
             (hash * seed + byte) & 0xFFFFFFFF
-          }
+          end
         }
 
         # Fowler-Noll-Vo 1a hash (32-bit)
@@ -48,9 +50,9 @@ module Unmagic
           fnv_prime = 16777619
           offset_basis = 2166136261
 
-          str.bytes.reduce(offset_basis) { |hash, byte|
+          str.bytes.reduce(offset_basis) do |hash, byte|
             ((hash ^ byte) * fnv_prime) & 0xFFFFFFFF
-          }
+          end
         }
 
         # SDBM hash algorithm (used in Berkeley DB)
@@ -60,9 +62,9 @@ module Unmagic
         # Example: Works well for database keys and identifiers
         # Use when: You're hashing database IDs or system identifiers
         SDBM = ->(str) {
-          str.bytes.reduce(0) { |hash, byte|
+          str.bytes.reduce(0) do |hash, byte|
             byte + (hash << 6) + (hash << 16) - hash
-          }.abs
+          end.abs
         }
 
         # Java-style string hashCode
@@ -72,9 +74,9 @@ module Unmagic
         # Example: "item1", "item2", "item3" get progressively shifting hues
         # Use when: You want compatibility with Java systems or predictable gradients
         JAVA = ->(str) {
-          str.chars.reduce(0) { |hash, char|
+          str.chars.reduce(0) do |hash, char|
             31 * hash + char.ord
-          }.abs
+          end.abs
         }
 
         # CRC32 (Cyclic Redundancy Check)
@@ -106,9 +108,9 @@ module Unmagic
         # Example: First letter has huge influence on hue, last letters fine-tune it
         # Use when: Character order matters (like initials or codes)
         POSITION = ->(str) {
-          str.chars.map.with_index { |char, index|
-            char.ord * ((index + 1) ** 2)
-          }.sum
+          str.chars.map.with_index do |char, index|
+            char.ord * ((index + 1)**2)
+          end.sum
         }
 
         # Case-insensitive perceptual hash
@@ -121,9 +123,9 @@ module Unmagic
           normalized = str.downcase.gsub(/[^a-z0-9]/, "")
           char_freq = normalized.chars.tally
 
-          char_freq.reduce(0) { |hash, (char, count)|
-            hash + (char.ord ** 2) * count
-          }
+          char_freq.reduce(0) do |hash, (char, count)|
+            hash + (char.ord**2) * count
+          end
         }
 
         # Color-aware hash (detects color names in string)
@@ -134,21 +136,39 @@ module Unmagic
         # Use when: Text might contain color names (usernames, team names, tags)
         COLOR_AWARE = ->(str) {
           color_hues = {
-            "red" => 0, "scarlet" => 10, "crimson" => 5,
-            "orange" => 30, "amber" => 45,
-            "yellow" => 60, "gold" => 50,
-            "green" => 120, "lime" => 90, "emerald" => 140,
-            "cyan" => 180, "teal" => 165, "turquoise" => 175,
-            "blue" => 240, "navy" => 235, "azure" => 210,
-            "purple" => 270, "violet" => 280, "indigo" => 255,
-            "pink" => 330, "magenta" => 300, "rose" => 345,
-            "brown" => 25, "tan" => 35,
-            "gray" => 0, "grey" => 0, "black" => 0, "white" => 0
+            "red" => 0,
+            "scarlet" => 10,
+            "crimson" => 5,
+            "orange" => 30,
+            "amber" => 45,
+            "yellow" => 60,
+            "gold" => 50,
+            "green" => 120,
+            "lime" => 90,
+            "emerald" => 140,
+            "cyan" => 180,
+            "teal" => 165,
+            "turquoise" => 175,
+            "blue" => 240,
+            "navy" => 235,
+            "azure" => 210,
+            "purple" => 270,
+            "violet" => 280,
+            "indigo" => 255,
+            "pink" => 330,
+            "magenta" => 300,
+            "rose" => 345,
+            "brown" => 25,
+            "tan" => 35,
+            "gray" => 0,
+            "grey" => 0,
+            "black" => 0,
+            "white" => 0,
           }
 
-          detected_hue = color_hues.find { |word, _|
+          detected_hue = color_hues.find do |word, _|
             str.downcase.include?(word)
-          }&.last
+          end&.last
 
           base_hash = DJB2.call(str)
 
@@ -206,8 +226,8 @@ module Unmagic
         # Get all available algorithms
         def self.all
           constants.select { |c| const_get(c).is_a?(Proc) }
-                   .map { |c| [ c.to_s.downcase.to_sym, const_get(c) ] }
-                   .to_h
+            .map { |c| [c.to_s.downcase.to_sym, const_get(c)] }
+            .to_h
         end
 
         # Get a hash function by name

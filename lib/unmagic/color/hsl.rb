@@ -7,7 +7,6 @@ module Unmagic
 
       attr_reader :hue, :saturation, :lightness
 
-
       def initialize(hue:, saturation:, lightness:)
         @hue = Color::Hue.new(value: hue)
         @saturation = Color::Saturation.new(saturation)
@@ -15,13 +14,13 @@ module Unmagic
       end
 
       # Return unit instances directly
-      def hue = @hue
-      def saturation = @saturation
-      def lightness = @lightness
+      attr_reader :hue
+      attr_reader :saturation
+      attr_reader :lightness
 
       # Parse HSL string like "hsl(180, 50%, 50%)" or "180, 50%, 50%"
       def self.parse(input)
-        raise ParseError.new("Input must be a string") unless input.is_a?(::String)
+        raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
         # Remove hsl() wrapper if present
         clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
@@ -29,13 +28,13 @@ module Unmagic
         # Split and parse values
         parts = clean.split(/\s*,\s*/)
         unless parts.length == 3
-          raise ParseError.new("Expected 3 HSL values, got #{parts.length}")
+          raise ParseError, "Expected 3 HSL values, got #{parts.length}"
         end
 
         # Check if hue is numeric
         h_str = parts[0].strip
         unless h_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError.new("Invalid hue value: #{h_str.inspect} (must be a number)")
+          raise ParseError, "Invalid hue value: #{h_str.inspect} (must be a number)"
         end
 
         # Check if saturation and lightness are numeric (with optional %)
@@ -43,11 +42,11 @@ module Unmagic
         l_str = parts[2].gsub("%", "").strip
 
         unless s_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError.new("Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)")
+          raise ParseError, "Invalid saturation value: #{parts[1].inspect} (must be a number with optional %)"
         end
 
         unless l_str.match?(/\A\d+(\.\d+)?\z/)
-          raise ParseError.new("Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)")
+          raise ParseError, "Invalid lightness value: #{parts[2].inspect} (must be a number with optional %)"
         end
 
         h = h_str.to_f
@@ -55,16 +54,16 @@ module Unmagic
         l = l_str.to_f
 
         # Validate ranges
-        unless h >= 0 && h <= 360
-          raise ParseError.new("Hue must be between 0 and 360, got #{h}")
+        if h < 0 || h > 360
+          raise ParseError, "Hue must be between 0 and 360, got #{h}"
         end
 
-        unless s >= 0 && s <= 100
-          raise ParseError.new("Saturation must be between 0 and 100, got #{s}")
+        if s < 0 || s > 100
+          raise ParseError, "Saturation must be between 0 and 100, got #{s}"
         end
 
-        unless l >= 0 && l <= 100
-          raise ParseError.new("Lightness must be between 0 and 100, got #{l}")
+        if l < 0 || l > 100
+          raise ParseError, "Lightness must be between 0 and 100, got #{l}"
         end
 
         new(hue: h, saturation: s, lightness: l)
@@ -73,7 +72,7 @@ module Unmagic
       # Factory: deterministic HSL from integer seed
       # Produces stable colors from hash function output.
       def self.derive(seed, lightness: 50, saturation_range: (40..80))
-        raise ArgumentError.new("Seed must be an integer") unless seed.is_a?(Integer)
+        raise ArgumentError, "Seed must be an integer" unless seed.is_a?(Integer)
 
         h32 = seed & 0xFFFFFFFF # Ensure 32-bit
 
@@ -211,22 +210,22 @@ module Unmagic
 
       def hsl_to_rgb
         h = @hue.value / 360.0
-        s = @saturation.to_ratio  # Convert percentage to 0-1
+        s = @saturation.to_ratio # Convert percentage to 0-1
         l = @lightness.to_ratio # Convert percentage to 0-1
 
         if s == 0
           # Achromatic
           gray = (l * 255).round
-          [ gray, gray, gray ]
+          [gray, gray, gray]
         else
           q = l < 0.5 ? l * (1 + s) : l + s - l * s
           p = 2 * l - q
 
-          r = hue_to_rgb(p, q, h + 1/3.0)
+          r = hue_to_rgb(p, q, h + 1 / 3.0)
           g = hue_to_rgb(p, q, h)
-          b = hue_to_rgb(p, q, h - 1/3.0)
+          b = hue_to_rgb(p, q, h - 1 / 3.0)
 
-          [ (r * 255).round, (g * 255).round, (b * 255).round ]
+          [(r * 255).round, (g * 255).round, (b * 255).round]
         end
       end
 
@@ -234,12 +233,12 @@ module Unmagic
         t += 1 if t < 0
         t -= 1 if t > 1
 
-        if t < 1/6.0
+        if t < 1 / 6.0
           p + (q - p) * 6 * t
-        elsif t < 1/2.0
+        elsif t < 1 / 2.0
           q
-        elsif t < 2/3.0
-          p + (q - p) * (2/3.0 - t) * 6
+        elsif t < 2 / 3.0
+          p + (q - p) * (2 / 3.0 - t) * 6
         else
           p
         end
