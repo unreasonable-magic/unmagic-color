@@ -359,25 +359,7 @@ RSpec.describe(Unmagic::Color::RGB) do
   end
 
   describe "#to_ansi" do
-    context "with standard ANSI colors" do
-      it "returns standard ANSI codes for exact matches" do
-        expect(described_class.new(red: 0, green: 0, blue: 0).to_ansi).to(eq("30"))       # black
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi).to(eq("31"))     # red
-        expect(described_class.new(red: 0, green: 255, blue: 0).to_ansi).to(eq("32"))     # green
-        expect(described_class.new(red: 255, green: 255, blue: 0).to_ansi).to(eq("33"))   # yellow
-        expect(described_class.new(red: 0, green: 0, blue: 255).to_ansi).to(eq("34"))     # blue
-        expect(described_class.new(red: 255, green: 0, blue: 255).to_ansi).to(eq("35"))   # magenta
-        expect(described_class.new(red: 0, green: 255, blue: 255).to_ansi).to(eq("36"))   # cyan
-        expect(described_class.new(red: 255, green: 255, blue: 255).to_ansi).to(eq("37")) # white
-      end
-
-      it "returns background codes with layer: :background" do
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(layer: :background)).to(eq("41"))
-        expect(described_class.new(red: 0, green: 255, blue: 0).to_ansi(layer: :background)).to(eq("42"))
-      end
-    end
-
-    context "with true color format" do
+    context "with default (truecolor) mode" do
       it "returns 24-bit true color for non-standard colors" do
         result = described_class.new(red: 100, green: 150, blue: 200).to_ansi
         expect(result).to(eq("38;2;100;150;200"))
@@ -396,8 +378,9 @@ RSpec.describe(Unmagic::Color::RGB) do
     end
 
     context "with mode: :truecolor" do
-      it "returns standard codes for exact ANSI matches" do
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("31"))
+      it "returns 24-bit true color for all colors" do
+        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;255;0;0"))
+        expect(described_class.new(red: 0, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;0;0;0"))
       end
 
       it "returns 24-bit true color for custom colors" do
@@ -495,17 +478,17 @@ RSpec.describe(Unmagic::Color::RGB) do
     context "with integration with parsed colors" do
       it "works with hex-parsed colors" do
         color = Unmagic::Color.parse("#ff0000")
-        expect(color.to_ansi).to(eq("31"))
+        expect(color.to_ansi).to(eq("38;2;255;0;0"))
       end
 
       it "works with named colors" do
         color = Unmagic::Color.parse("red")
-        expect(color.to_ansi).to(eq("31"))
+        expect(color.to_ansi).to(eq("38;2;255;0;0"))
       end
 
       it "works with ANSI-parsed colors" do
         color = Unmagic::Color.parse("31")
-        expect(color.to_ansi).to(eq("31"))
+        expect(color.to_ansi).to(eq("38;2;255;0;0"))
       end
     end
   end
