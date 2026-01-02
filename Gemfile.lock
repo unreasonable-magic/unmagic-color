@@ -10,6 +10,11 @@ GEM
     date (3.5.1)
     diff-lcs (1.6.2)
     erb (6.0.1)
+    io-console (0.8.2)
+    irb (1.16.0)
+      pp (>= 0.6.0)
+      rdoc (>= 4.0.0)
+      reline (>= 0.4.2)
     json (2.13.2)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
@@ -19,6 +24,9 @@ GEM
     parser (3.3.9.0)
       ast (~> 2.4.1)
       racc
+    pp (0.6.3)
+      prettyprint
+    prettyprint (0.2.0)
     prism (1.7.0)
     psych (5.3.1)
       date
@@ -35,6 +43,8 @@ GEM
       tsort
     redcarpet (3.6.1)
     regexp_parser (2.11.2)
+    reline (0.6.3)
+      io-console (~> 0.5)
     rspec (3.13.1)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -91,6 +101,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  irb
   rack
   rackup
   rake

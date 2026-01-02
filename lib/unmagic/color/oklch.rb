@@ -438,6 +438,23 @@ module Unmagic
         to_rgb.to_ansi(layer: layer)
       end
 
+      # Pretty print support with colored swatch in class name.
+      #
+      # Outputs standard Ruby object format with a colored block character
+      # embedded in the class name area. Note: @lightness is shown via its
+      # inspect method since it's a Lightness percentage object.
+      #
+      # @param pp [PrettyPrint] The pretty printer instance
+      #
+      # @example
+      #   oklch = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 30)
+      #   pp oklch
+      #   # Outputs: #<Unmagic::Color::OKLCH[█]:0x... @lightness=... @chroma=0.15 @hue=30>
+      #   # (with colored █ block)
+      def pretty_print(pp)
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi}m█\x1b[0m]:0x#{object_id.to_s(16)} @lightness=#{@lightness.inspect} @chroma=#{@chroma.value.round(2)} @hue=#{@hue.value.round}>")
+      end
+
       private
 
       def clamp01(x)

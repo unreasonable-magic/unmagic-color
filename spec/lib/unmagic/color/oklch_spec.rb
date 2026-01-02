@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "pp"
+require "stringio"
 
 RSpec.describe(Unmagic::Color::OKLCH) do
   describe ".parse" do
@@ -260,6 +262,31 @@ RSpec.describe(Unmagic::Color::OKLCH) do
       color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
       result = color.to_ansi(layer: :background)
       expect(result).to(match(/\A(?:4[0-7]|48;2;\d+;\d+;\d+)\z/))
+    end
+  end
+
+  describe "#pretty_print" do
+    it "outputs standard Ruby format with colored swatch in class name" do
+      oklch = described_class.new(lightness: 0.60, chroma: 0.15, hue: 240)
+      io = StringIO.new
+      PP.pp(oklch, io)
+
+      output = io.string.chomp
+      expect(output).to(include("\x1b["))
+      expect(output).to(include("█"))
+      expect(output).to(include("#<Unmagic::Color::OKLCH["))
+      expect(output).to(include("@chroma=0.15"))
+      expect(output).to(include("@hue=240"))
+    end
+
+    it "formats chroma with 2 decimal places and rounds hue" do
+      oklch = described_class.new(lightness: 0.654321, chroma: 0.156789, hue: 45.7)
+      io = StringIO.new
+      PP.pp(oklch, io)
+
+      output = io.string.chomp
+      expect(output).to(include("@chroma=0.16"))
+      expect(output).to(include("@hue=46"))
     end
   end
 end

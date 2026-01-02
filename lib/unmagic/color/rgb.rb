@@ -432,6 +432,22 @@ module Unmagic
         "#{prefix};2;#{@red.value};#{@green.value};#{@blue.value}"
       end
 
+      # Pretty print support with colored swatch in class name.
+      #
+      # Outputs standard Ruby object format with a colored block character
+      # embedded in the class name area.
+      #
+      # @param pp [PrettyPrint] The pretty printer instance
+      #
+      # @example
+      #   rgb = RGB.new(red: 255, green: 87, blue: 51)
+      #   pp rgb
+      #   # Outputs: #<Unmagic::Color::RGB[█]:0x... @red=255 @green=87 @blue=51>
+      #   # (with colored █ block)
+      def pretty_print(pp)
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi}m█\x1b[0m]:0x#{object_id.to_s(16)} @red=#{@red.value} @green=#{@green.value} @blue=#{@blue.value}>")
+      end
+
       # Mapping of exact hex colors to ANSI color codes.
       # Only the 8 standard ANSI colors are mapped.
       ANSI_NAMED_COLORS = {

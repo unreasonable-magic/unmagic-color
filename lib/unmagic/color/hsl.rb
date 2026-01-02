@@ -394,6 +394,22 @@ module Unmagic
         to_rgb.to_ansi(layer: layer)
       end
 
+      # Pretty print support with colored swatch in class name.
+      #
+      # Outputs standard Ruby object format with a colored block character
+      # embedded in the class name area.
+      #
+      # @param pp [PrettyPrint] The pretty printer instance
+      #
+      # @example
+      #   hsl = HSL.new(hue: 9, saturation: 100, lightness: 60)
+      #   pp hsl
+      #   # Outputs: #<Unmagic::Color::HSL[█]:0x... @hue=9 @saturation=100 @lightness=60>
+      #   # (with colored █ block)
+      def pretty_print(pp)
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi}m█\x1b[0m]:0x#{object_id.to_s(16)} @hue=#{@hue.value.round} @saturation=#{@saturation.value.round} @lightness=#{@lightness.value.round}>")
+      end
+
       private
 
       def hsl_to_rgb

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "pp"
+require "stringio"
 
 RSpec.describe(Unmagic::Color::HSL) do
   describe ".parse" do
@@ -414,6 +416,33 @@ RSpec.describe(Unmagic::Color::HSL) do
       color = described_class.new(hue: 180, saturation: 50, lightness: 50)
       result = color.to_ansi
       expect(result).to(match(/\A38;2;\d+;\d+;\d+\z/))
+    end
+  end
+
+  describe "#pretty_print" do
+    it "outputs standard Ruby format with colored swatch in class name" do
+      hsl = described_class.new(hue: 240, saturation: 80, lightness: 50)
+      io = StringIO.new
+      PP.pp(hsl, io)
+
+      output = io.string.chomp
+      expect(output).to(include("\x1b["))
+      expect(output).to(include("█"))
+      expect(output).to(include("#<Unmagic::Color::HSL["))
+      expect(output).to(include("@hue=240"))
+      expect(output).to(include("@saturation=80"))
+      expect(output).to(include("@lightness=50"))
+    end
+
+    it "rounds component values" do
+      hsl = described_class.new(hue: 9.7, saturation: 99.6, lightness: 60.4)
+      io = StringIO.new
+      PP.pp(hsl, io)
+
+      output = io.string.chomp
+      expect(output).to(include("@hue=10"))
+      expect(output).to(include("@saturation=100"))
+      expect(output).to(include("@lightness=60"))
     end
   end
 end

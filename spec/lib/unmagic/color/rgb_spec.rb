@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "pp"
+require "stringio"
 
 RSpec.describe(Unmagic::Color::RGB) do
   def parse(...)
@@ -417,6 +419,22 @@ RSpec.describe(Unmagic::Color::RGB) do
         color = Unmagic::Color.parse("31")
         expect(color.to_ansi).to(eq("31"))
       end
+    end
+  end
+
+  describe "#pretty_print" do
+    it "outputs standard Ruby format with colored swatch in class name" do
+      rgb = new(red: 255, green: 0, blue: 0)
+      io = StringIO.new
+      PP.pp(rgb, io)
+
+      output = io.string.chomp
+      expect(output).to(include("\x1b["))
+      expect(output).to(include("█"))
+      expect(output).to(include("#<Unmagic::Color::RGB["))
+      expect(output).to(include("@red=255"))
+      expect(output).to(include("@green=0"))
+      expect(output).to(include("@blue=0"))
     end
   end
 end
