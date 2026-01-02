@@ -433,17 +433,17 @@ module Unmagic
       # @return [String] ANSI SGR code
       # @raise [ArgumentError] If layer or mode is invalid
       #
-      # @example Standard ANSI color with default mode
+      # @example Default mode (truecolor)
       #   red = RGB.new(red: 255, green: 0, blue: 0)
       #   red.to_ansi
-      #   # => "31"
+      #   # => "38;2;255;0;0"
       #
       # @example Background color
       #   red = RGB.new(red: 255, green: 0, blue: 0)
       #   red.to_ansi(layer: :background)
-      #   # => "41"
+      #   # => "48;2;255;0;0"
       #
-      # @example True color mode
+      # @example True color mode (explicit)
       #   custom = RGB.new(red: 100, green: 150, blue: 200)
       #   custom.to_ansi(mode: :truecolor)
       #   # => "38;2;100;150;200"
@@ -478,16 +478,6 @@ module Unmagic
       # @param layer [Symbol] Foreground or background layer
       # @return [String] ANSI SGR code
       def to_ansi_truecolor(layer)
-        # Check if RGB matches an exact ANSI named color
-        hex = to_hex.downcase
-
-        if ANSI_NAMED_COLORS.key?(hex)
-          code = ANSI_NAMED_COLORS[hex]
-          prefix = layer == :foreground ? 30 : 40
-          return (prefix + code).to_s
-        end
-
-        # Use 24-bit true color format
         prefix = layer == :foreground ? 38 : 48
         "#{prefix};2;#{@red.value};#{@green.value};#{@blue.value}"
       end
@@ -622,19 +612,6 @@ module Unmagic
       def pretty_print(pp)
         pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m] @red=#{@red.value} @green=#{@green.value} @blue=#{@blue.value}>")
       end
-
-      # Mapping of exact hex colors to ANSI color codes.
-      # Only the 8 standard ANSI colors are mapped.
-      ANSI_NAMED_COLORS = {
-        "#000000" => 0, # black
-        "#ff0000" => 1, # red
-        "#00ff00" => 2, # green
-        "#ffff00" => 3, # yellow
-        "#0000ff" => 4, # blue
-        "#ff00ff" => 5, # magenta (fuchsia)
-        "#00ffff" => 6, # cyan (aqua)
-        "#ffffff" => 7, # white
-      }.freeze
     end
   end
 end

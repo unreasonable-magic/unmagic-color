@@ -404,12 +404,12 @@ RSpec.describe(Unmagic::Color::HSL) do
   describe "#to_ansi" do
     it "delegates to RGB#to_ansi" do
       color = described_class.new(hue: 0, saturation: 100, lightness: 50)
-      expect(color.to_ansi).to(eq("31")) # Pure red
+      expect(color.to_ansi).to(eq("38;2;255;0;0")) # Pure red
     end
 
     it "supports background layer" do
       color = described_class.new(hue: 0, saturation: 100, lightness: 50)
-      expect(color.to_ansi(layer: :background)).to(eq("41"))
+      expect(color.to_ansi(layer: :background)).to(eq("48;2;255;0;0"))
     end
 
     it "uses true color for non-standard colors" do
