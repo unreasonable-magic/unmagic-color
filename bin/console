@@ -3,6 +3,112 @@
 
 require "bundler/setup"
 require "unmagic_color"
-
 require "irb"
-IRB.start(__FILE__)
+require "irb/helper_method"
+
+# Helper methods for color parsing
+class RGBHelper < IRB::HelperMethod::Base
+  description "Parse an RGB color string"
+
+  def execute(*args, **kwargs)
+    Unmagic::Color::RGB.parse(*args, **kwargs)
+  end
+end
+
+class HSLHelper < IRB::HelperMethod::Base
+  description "Parse an HSL color string"
+
+  def execute(*args, **kwargs)
+    Unmagic::Color::HSL.parse(*args, **kwargs)
+  end
+end
+
+class OKLCHHelper < IRB::HelperMethod::Base
+  description "Parse an OKLCH color string"
+
+  def execute(*args, **kwargs)
+    Unmagic::Color::OKLCH.parse(*args, **kwargs)
+  end
+end
+
+class ParseHelper < IRB::HelperMethod::Base
+  description "Parse any color format (hex, rgb, hsl, oklch, named)"
+
+  def execute(*args, **kwargs)
+    Unmagic::Color[*args, **kwargs]
+  end
+end
+
+IRB::HelperMethod.register(:rgb, RGBHelper)
+IRB::HelperMethod.register(:hsl, HSLHelper)
+IRB::HelperMethod.register(:oklch, OKLCHHelper)
+IRB::HelperMethod.register(:parse, ParseHelper)
+
+# Print welcome banner with syntax highlighting
+def colorize(text, color)
+  "\e[#{color.to_ansi}m#{text}\e[0m"
+end
+
+def highlight(code)
+  green = Unmagic::Color["#00ff00"]
+  magenta = Unmagic::Color["#ff00ff"]
+
+  code
+    .gsub(/(".*?")/) { colorize(Regexp.last_match(1), green) } # Strings in green
+    .gsub(/\b(\d+\.?\d*)\b/) { colorize(Regexp.last_match(1), magenta) } # Numbers in magenta
+end
+
+def comment(text)
+  gray = Unmagic::Color["#808080"]
+  colorize(text, gray)
+end
+
+puts <<~BANNER
+                                                               ▄▄
+                                   ▀▀                          ██
+  ██ ██ ████▄ ███▄███▄  ▀▀█▄ ▄████ ██  ▄████       ▄████ ▄███▄ ██ ▄███▄ ████▄
+  ██ ██ ██ ██ ██ ██ ██ ▄█▀██ ██ ██ ██  ██    ▀▀▀▀▀ ██    ██ ██ ██ ██ ██ ██ ▀▀
+  ▀██▀█ ██ ██ ██ ██ ██ ▀█▄██ ▀████ ██▄ ▀████       ▀████ ▀███▀ ██ ▀███▀ ██
+                                ██
+                              ▀▀▀
+  https://github.com/unmagic/unmagic-color
+
+  #{comment("# Parse colors")}
+  #{highlight('parse("#ff5733")')}
+  #{highlight('rgb("255, 87, 51")')}
+  #{highlight('hsl("9, 100%, 60%")')}
+  #{highlight('oklch("0.65 0.22 30")')}
+  #{highlight('parse("rebeccapurple")')}
+
+  #{comment("# Manipulate colors")}
+  #{highlight('color = parse("#ff5733")')}
+  #{highlight("color.lighten(0.1)")}
+  #{highlight("color.darken(0.1)")}
+  #{highlight("color.saturate(0.1)")}
+  #{highlight("color.desaturate(0.1)")}
+  #{highlight("color.rotate(30)")}
+
+  #{comment("# Convert between formats")}
+  #{highlight("color.to_rgb")}
+  #{highlight("color.to_hsl")}
+  #{highlight("color.to_oklch")}
+  #{highlight("color.to_hex")}
+  #{highlight("color.to_css_oklch")}
+
+BANNER
+
+# Configure IRB with custom prompt
+ARGV.clear
+
+IRB.setup(nil)
+IRB.conf[:PROMPT][:UNMAGIC_COLOR] = {
+  PROMPT_I: "unmagic-color> ",
+  PROMPT_S: "unmagic-color%l ",
+  PROMPT_C: "unmagic-color* ",
+  RETURN: "=> %s\n",
+}
+IRB.conf[:PROMPT_MODE] = :UNMAGIC_COLOR
+
+require "irb/workspace"
+workspace = IRB::WorkSpace.new(binding)
+IRB::Irb.new(workspace).run(IRB.conf)
