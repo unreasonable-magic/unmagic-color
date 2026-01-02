@@ -8,26 +8,26 @@ require "irb/helper_method"
 
 # Helper methods for color parsing
 class RGBHelper < IRB::HelperMethod::Base
-  description "Parse an RGB color string"
+  description "Build an RGB color"
 
   def execute(*args, **kwargs)
-    Unmagic::Color::RGB.parse(*args, **kwargs)
+    Unmagic::Color::RGB.build(*args, **kwargs)
   end
 end
 
 class HSLHelper < IRB::HelperMethod::Base
-  description "Parse an HSL color string"
+  description "Build an HSL color"
 
   def execute(*args, **kwargs)
-    Unmagic::Color::HSL.parse(*args, **kwargs)
+    Unmagic::Color::HSL.build(*args, **kwargs)
   end
 end
 
 class OKLCHHelper < IRB::HelperMethod::Base
-  description "Parse an OKLCH color string"
+  description "Build an OKLCH color"
 
   def execute(*args, **kwargs)
-    Unmagic::Color::OKLCH.parse(*args, **kwargs)
+    Unmagic::Color::OKLCH.build(*args, **kwargs)
   end
 end
 
@@ -75,9 +75,9 @@ puts <<~BANNER
 
   #{comment("# Parse colors")}
   #{highlight('parse("#ff5733")')}
-  #{highlight('rgb("255, 87, 51")')}
-  #{highlight('hsl("9, 100%, 60%")')}
-  #{highlight('oklch("0.65 0.22 30")')}
+  #{highlight("rgb(255, 87, 51)")}
+  #{highlight("hsl(9, 100, 60)")}
+  #{highlight("oklch(0.65, 0.22, 30)")}
   #{highlight('parse("rebeccapurple")')}
 
   #{comment("# Manipulate colors")}

@@ -162,6 +162,29 @@ module Unmagic
           new(hue: h, saturation: s, lightness: l)
         end
 
+        # Build an HSL color from a string, positional values, or keyword arguments.
+        #
+        # @example From string
+        #   HSL.build("hsl(120, 100%, 50%)")
+        #
+        # @example From positional values
+        #   HSL.build(120, 100, 50)
+        #
+        # @example From keyword arguments
+        #   HSL.build(hue: 120, saturation: 100, lightness: 50)
+        def build(*args, **kwargs)
+          if kwargs.any?
+            new(**kwargs)
+          elsif args.length == 1
+            parse(args[0])
+          elsif args.length == 3
+            values = args.map { |v| v.is_a?(::String) ? v.to_f : v }
+            new(hue: values[0], saturation: values[1], lightness: values[2])
+          else
+            raise ArgumentError, "Expected 1 or 3 arguments, got #{args.length}"
+          end
+        end
+
         # Generate a deterministic HSL color from an integer seed.
         #
         # Creates visually distinct, consistent colors from hash values. Particularly

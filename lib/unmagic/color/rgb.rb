@@ -121,6 +121,29 @@ module Unmagic
           parse_rgb_format(input)
         end
 
+        # Build an RGB color from a string, positional values, or keyword arguments.
+        #
+        # @example From string
+        #   RGB.build("#FF8800")
+        #
+        # @example From positional values
+        #   RGB.build(255, 128, 0)
+        #
+        # @example From keyword arguments
+        #   RGB.build(red: 255, green: 128, blue: 0)
+        def build(*args, **kwargs)
+          if kwargs.any?
+            new(**kwargs)
+          elsif args.length == 1
+            parse(args[0])
+          elsif args.length == 3
+            values = args.map { |v| v.is_a?(::String) ? v.to_i : v }
+            new(red: values[0], green: values[1], blue: values[2])
+          else
+            raise ArgumentError, "Expected 1 or 3 arguments, got #{args.length}"
+          end
+        end
+
         # Generate a deterministic RGB color from an integer seed.
         #
         # This creates consistent, visually distinct colors from hash values or IDs.

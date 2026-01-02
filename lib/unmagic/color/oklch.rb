@@ -170,6 +170,29 @@ module Unmagic
           new(lightness: l, chroma: c, hue: h)
         end
 
+        # Build an OKLCH color from a string, positional values, or keyword arguments.
+        #
+        # @example From string
+        #   OKLCH.build("oklch(0.65 0.15 240)")
+        #
+        # @example From positional values
+        #   OKLCH.build(0.65, 0.15, 240)
+        #
+        # @example From keyword arguments
+        #   OKLCH.build(lightness: 0.65, chroma: 0.15, hue: 240)
+        def build(*args, **kwargs)
+          if kwargs.any?
+            new(**kwargs)
+          elsif args.length == 1
+            parse(args[0])
+          elsif args.length == 3
+            values = args.map { |v| v.is_a?(::String) ? v.to_f : v }
+            new(lightness: values[0], chroma: values[1], hue: values[2])
+          else
+            raise ArgumentError, "Expected 1 or 3 arguments, got #{args.length}"
+          end
+        end
+
         # Generate a deterministic OKLCH color from an integer seed.
         #
         # Creates perceptually balanced, visually distinct colors. This is particularly
