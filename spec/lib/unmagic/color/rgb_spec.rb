@@ -395,12 +395,100 @@ RSpec.describe(Unmagic::Color::RGB) do
       end
     end
 
+    context "with mode: :truecolor" do
+      it "returns standard codes for exact ANSI matches" do
+        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("31"))
+      end
+
+      it "returns 24-bit true color for custom colors" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor)
+        expect(result).to(eq("38;2;100;150;200"))
+      end
+
+      it "works with background layer" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor, layer: :background)
+        expect(result).to(eq("48;2;100;150;200"))
+      end
+    end
+
+    context "with mode: :palette256" do
+      it "converts to 256-color palette for foreground" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256)
+        expect(result).to(match(/^38;5;\d+$/))
+      end
+
+      it "converts to 256-color palette for background" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256, layer: :background)
+        expect(result).to(match(/^48;5;\d+$/))
+      end
+
+      it "maps standard colors to RGB cube" do
+        red = described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette256)
+        expect(red).to(eq("38;5;196"))
+      end
+
+      it "maps grayscale colors to grayscale ramp" do
+        gray = described_class.new(red: 128, green: 128, blue: 128).to_ansi(mode: :palette256)
+        expect(gray).to(match(/^38;5;(232|233|234|235|236|237|238|239|240|241|242|243|244|245)$/))
+      end
+
+      it "maps RGB cube colors correctly" do
+        color = described_class.new(red: 95, green: 135, blue: 175).to_ansi(mode: :palette256)
+        expect(color).to(eq("38;5;67"))
+      end
+    end
+
+    context "with mode: :palette16" do
+      it "converts to 16-color palette codes for foreground" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
+        expect(result).to(match(/^9[0-7]$/))
+      end
+
+      it "converts to 16-color palette codes for background" do
+        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16, layer: :background)
+        expect(result).to(match(/^10[0-7]$/))
+      end
+
+      it "maps to nearest palette color" do
+        red = described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette16)
+        expect(red).to(eq("91"))
+
+        green = described_class.new(red: 0, green: 255, blue: 0).to_ansi(mode: :palette16)
+        expect(green).to(eq("92"))
+
+        blue = described_class.new(red: 0, green: 0, blue: 255).to_ansi(mode: :palette16)
+        expect(blue).to(eq("94"))
+      end
+
+      it "finds nearest color for custom RGB" do
+        color = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
+        expect(color).to(eq("96"))
+      end
+
+      it "maps black correctly" do
+        black = described_class.new(red: 0, green: 0, blue: 0).to_ansi(mode: :palette16)
+        expect(black).to(eq("90"))
+      end
+
+      it "maps white correctly" do
+        white = described_class.new(red: 255, green: 255, blue: 255).to_ansi(mode: :palette16)
+        expect(white).to(eq("97"))
+      end
+    end
+
     context "with error handling" do
       it "raises ArgumentError for invalid layer" do
         color = described_class.new(red: 255, green: 0, blue: 0)
         expect do
           color.to_ansi(layer: :invalid)
         end.to(raise_error(ArgumentError, /layer must be :foreground or :background/))
+      end
+
+      it "raises ArgumentError for invalid mode" do
+        color = described_class.new(red: 255, green: 0, blue: 0)
+        expect do
+          color.to_ansi(mode: :invalid)
+        end.to(raise_error(ArgumentError, /mode must be :truecolor, :palette256, or :palette16/))
       end
     end
 

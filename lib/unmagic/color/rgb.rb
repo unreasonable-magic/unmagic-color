@@ -423,14 +423,17 @@ module Unmagic
       # Convert to ANSI SGR color code.
       #
       # Returns an ANSI Select Graphic Rendition (SGR) parameter string for terminal output.
-      # Named colors that match exact ANSI colors use standard codes (30-37 for foreground,
-      # 40-47 for background). All other colors use 24-bit true color format.
+      # Supports multiple color modes for different terminal capabilities.
       #
       # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
-      # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
-      # @raise [ArgumentError] If layer is not :foreground or :background
+      # @param mode [Symbol] Color format mode:
+      #   - :truecolor (default) - 24-bit RGB (38;2;R;G;B or 48;2;R;G;B)
+      #   - :palette256 - 256-color palette (38;5;N or 48;5;N)
+      #   - :palette16 - 16-color palette (30-37, 90-97, 40-47, 100-107)
+      # @return [String] ANSI SGR code
+      # @raise [ArgumentError] If layer or mode is invalid
       #
-      # @example Standard ANSI color
+      # @example Standard ANSI color with default mode
       #   red = RGB.new(red: 255, green: 0, blue: 0)
       #   red.to_ansi
       #   # => "31"
@@ -440,13 +443,41 @@ module Unmagic
       #   red.to_ansi(layer: :background)
       #   # => "41"
       #
-      # @example True color for custom RGB
+      # @example True color mode
       #   custom = RGB.new(red: 100, green: 150, blue: 200)
-      #   custom.to_ansi
+      #   custom.to_ansi(mode: :truecolor)
       #   # => "38;2;100;150;200"
-      def to_ansi(layer: :foreground)
+      #
+      # @example 256-color palette mode
+      #   custom = RGB.new(red: 100, green: 150, blue: 200)
+      #   custom.to_ansi(mode: :palette256)
+      #   # => "38;5;67"
+      #
+      # @example 16-color palette mode
+      #   custom = RGB.new(red: 100, green: 150, blue: 200)
+      #   custom.to_ansi(mode: :palette16)
+      #   # => "34"
+      def to_ansi(layer: :foreground, mode: :truecolor)
         raise ArgumentError, "layer must be :foreground or :background" unless [:foreground, :background].include?(layer)
+        raise ArgumentError, "mode must be :truecolor, :palette256, or :palette16" unless [:truecolor, :palette256, :palette16].include?(mode)
 
+        case mode
+        when :truecolor
+          to_ansi_truecolor(layer)
+        when :palette256
+          to_ansi_palette256(layer)
+        when :palette16
+          to_ansi_palette16(layer)
+        end
+      end
+
+      private
+
+      # Convert to ANSI true color format (24-bit RGB).
+      #
+      # @param layer [Symbol] Foreground or background layer
+      # @return [String] ANSI SGR code
+      def to_ansi_truecolor(layer)
         # Check if RGB matches an exact ANSI named color
         hex = to_hex.downcase
 
@@ -460,6 +491,121 @@ module Unmagic
         prefix = layer == :foreground ? 38 : 48
         "#{prefix};2;#{@red.value};#{@green.value};#{@blue.value}"
       end
+
+      # Convert to ANSI 256-color palette format.
+      #
+      # Finds the nearest color in the 256-color palette.
+      #
+      # @param layer [Symbol] Foreground or background layer
+      # @return [String] ANSI SGR code
+      def to_ansi_palette256(layer)
+        index = rgb_to_palette256
+        prefix = layer == :foreground ? 38 : 48
+        "#{prefix};5;#{index}"
+      end
+
+      # Convert to 16-color palette ANSI format.
+      #
+      # Finds the nearest of the 8 basic colors and uses bright variants.
+      #
+      # @param layer [Symbol] Foreground or background layer
+      # @return [String] ANSI SGR code
+      def to_ansi_palette16(layer)
+        index = rgb_to_palette16
+        prefix = layer == :foreground ? 90 : 100
+        (prefix + index).to_s
+      end
+
+      # Find the nearest color in the 256-color palette.
+      #
+      # @return [Integer] Palette index (0-255)
+      def rgb_to_palette256
+        r = @red.value
+        g = @green.value
+        b = @blue.value
+
+        # Check if it's grayscale (all components within small threshold)
+        if (r - g).abs < 10 && (r - b).abs < 10 && (g - b).abs < 10
+          # Use grayscale ramp (232-255)
+          gray = (r + g + b) / 3
+          if gray < 8
+            return 16 # Use first RGB cube entry for very dark
+          elsif gray > 238
+            return 231 # Use last RGB cube entry for very light
+          else
+            # Map to grayscale ramp: 232 + (0-23)
+            index = ((gray - 8) / 10.0).round
+            return 232 + index.clamp(0, 23)
+          end
+        end
+
+        # Find nearest in 6x6x6 RGB cube (16-231)
+        # Each component: 0, 95, 135, 175, 215, 255 (values 0-5)
+        r_index = rgb_to_cube_index(r)
+        g_index = rgb_to_cube_index(g)
+        b_index = rgb_to_cube_index(b)
+
+        16 + (r_index * 36) + (g_index * 6) + b_index
+      end
+
+      # Convert RGB component to 6x6x6 cube index.
+      #
+      # @param value [Integer] RGB component value (0-255)
+      # @return [Integer] Cube index (0-5)
+      def rgb_to_cube_index(value)
+        # Cube values: 0, 95, 135, 175, 215, 255
+        # Thresholds: 47.5, 115, 155, 195, 235
+        if value < 48
+          0
+        elsif value < 115
+          1
+        elsif value < 155
+          2
+        elsif value < 195
+          3
+        elsif value < 235
+          4
+        else
+          5
+        end
+      end
+
+      # Find the nearest color in the 16-color palette (0-7).
+      #
+      # @return [Integer] Color index (0-7)
+      def rgb_to_palette16
+        # Standard ANSI colors
+        colors = [
+          [0, 0, 0],       # 0: black
+          [255, 0, 0],     # 1: red
+          [0, 255, 0],     # 2: green
+          [255, 255, 0],   # 3: yellow
+          [0, 0, 255],     # 4: blue
+          [255, 0, 255],   # 5: magenta
+          [0, 255, 255],   # 6: cyan
+          [255, 255, 255], # 7: white
+        ]
+
+        r = @red.value
+        g = @green.value
+        b = @blue.value
+
+        min_distance = Float::INFINITY
+        nearest_index = 0
+
+        colors.each_with_index do |color, index|
+          cr, cg, cb = color
+          distance = ((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
+          if distance < min_distance
+            min_distance = distance
+            nearest_index = index
+          end
+        end
+
+        nearest_index
+      end
+
+      public
 
       # Pretty print support with colored swatch in class name.
       #
