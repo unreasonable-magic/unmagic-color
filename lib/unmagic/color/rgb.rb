@@ -620,7 +620,7 @@ module Unmagic
       #   # Outputs: #<Unmagic::Color::RGB[█]:0x... @red=255 @green=87 @blue=51>
       #   # (with colored █ block)
       def pretty_print(pp)
-        pp.text("#<#{self.class.name}[\x1b[#{to_ansi}m█\x1b[0m]:0x#{object_id.to_s(16)} @red=#{@red.value} @green=#{@green.value} @blue=#{@blue.value}>")
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m]:0x#{object_id.to_s(16)} @red=#{@red.value} @green=#{@green.value} @blue=#{@blue.value}>")
       end
 
       # Mapping of exact hex colors to ANSI color codes.

@@ -413,14 +413,15 @@ module Unmagic
       # Converts to RGB first, then generates the ANSI code.
       #
       # @param layer [Symbol] Whether to generate foreground (:foreground) or background (:background) code
+      # @param mode [Symbol] Color format mode (:truecolor, :palette256, :palette16)
       # @return [String] ANSI SGR code like "31" or "38;2;255;0;0"
       #
       # @example
       #   color = HSL.new(hue: 0, saturation: 100, lightness: 50)
       #   color.to_ansi
       #   # => "31"
-      def to_ansi(layer: :foreground)
-        to_rgb.to_ansi(layer: layer)
+      def to_ansi(layer: :foreground, mode: :truecolor)
+        to_rgb.to_ansi(layer: layer, mode: mode)
       end
 
       # Pretty print support with colored swatch in class name.
@@ -436,7 +437,7 @@ module Unmagic
       #   # Outputs: #<Unmagic::Color::HSL[█]:0x... @hue=9 @saturation=100 @lightness=60>
       #   # (with colored █ block)
       def pretty_print(pp)
-        pp.text("#<#{self.class.name}[\x1b[#{to_ansi}m█\x1b[0m]:0x#{object_id.to_s(16)} @hue=#{@hue.value.round} @saturation=#{@saturation.value.round} @lightness=#{@lightness.value.round}>")
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m]:0x#{object_id.to_s(16)} @hue=#{@hue.value.round} @saturation=#{@saturation.value.round} @lightness=#{@lightness.value.round}>")
       end
 
       private
