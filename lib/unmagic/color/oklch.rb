@@ -172,6 +172,12 @@ module Unmagic
 
         # Build an OKLCH color from a string, positional values, or keyword arguments.
         #
+        # @param args [String, Numeric] Either a color string or 3 component values
+        # @option kwargs [Numeric] :lightness Lightness (0-1)
+        # @option kwargs [Numeric] :chroma Chroma (0-0.5)
+        # @option kwargs [Numeric] :hue Hue in degrees (0-360)
+        # @return [OKLCH] The constructed OKLCH color
+        #
         # @example From string
         #   OKLCH.build("oklch(0.65 0.15 240)")
         #

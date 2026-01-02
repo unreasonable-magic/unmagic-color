@@ -164,6 +164,12 @@ module Unmagic
 
         # Build an HSL color from a string, positional values, or keyword arguments.
         #
+        # @param args [String, Numeric] Either a color string or 3 component values
+        # @option kwargs [Numeric] :hue Hue in degrees (0-360)
+        # @option kwargs [Numeric] :saturation Saturation percentage (0-100)
+        # @option kwargs [Numeric] :lightness Lightness percentage (0-100)
+        # @return [HSL] The constructed HSL color
+        #
         # @example From string
         #   HSL.build("hsl(120, 100%, 50%)")
         #

@@ -123,6 +123,12 @@ module Unmagic
 
         # Build an RGB color from a string, positional values, or keyword arguments.
         #
+        # @param args [String, Integer] Either a color string or 3 component values
+        # @option kwargs [Integer] :red Red component (0-255)
+        # @option kwargs [Integer] :green Green component (0-255)
+        # @option kwargs [Integer] :blue Blue component (0-255)
+        # @return [RGB] The constructed RGB color
+        #
         # @example From string
         #   RGB.build("#FF8800")
         #
