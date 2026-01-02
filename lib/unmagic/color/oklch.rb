@@ -479,10 +479,10 @@ module Unmagic
       # @example
       #   oklch = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 30)
       #   pp oklch
-      #   # Outputs: #<Unmagic::Color::OKLCH[█]:0x... @lightness=... @chroma=0.15 @hue=30>
+      #   # Outputs: #<Unmagic::Color::OKLCH[█] @lightness=... @chroma=0.15 @hue=30>
       #   # (with colored █ block)
       def pretty_print(pp)
-        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m]:0x#{object_id.to_s(16)} @lightness=#{@lightness.inspect} @chroma=#{@chroma.value.round(2)} @hue=#{@hue.value.round}>")
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m] @lightness=#{@lightness.inspect} @chroma=#{@chroma.value.round(2)} @hue=#{@hue.value.round}>")
       end
 
       private

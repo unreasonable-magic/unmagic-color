@@ -434,10 +434,10 @@ module Unmagic
       # @example
       #   hsl = HSL.new(hue: 9, saturation: 100, lightness: 60)
       #   pp hsl
-      #   # Outputs: #<Unmagic::Color::HSL[█]:0x... @hue=9 @saturation=100 @lightness=60>
+      #   # Outputs: #<Unmagic::Color::HSL[█] @hue=9 @saturation=100 @lightness=60>
       #   # (with colored █ block)
       def pretty_print(pp)
-        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m]:0x#{object_id.to_s(16)} @hue=#{@hue.value.round} @saturation=#{@saturation.value.round} @lightness=#{@lightness.value.round}>")
+        pp.text("#<#{self.class.name}[\x1b[#{to_ansi(mode: :truecolor)}m█\x1b[0m] @hue=#{@hue.value.round} @saturation=#{@saturation.value.round} @lightness=#{@lightness.value.round}>")
       end
 
       private
