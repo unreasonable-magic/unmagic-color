@@ -50,6 +50,14 @@ module Unmagic
     require_relative "color/oklch"
     require_relative "color/string/hash_function"
     require_relative "color/util/percentage"
+    require_relative "color/units/degrees"
+    require_relative "color/gradient"
+    require_relative "color/gradient/stop"
+    require_relative "color/gradient/bitmap"
+    require_relative "color/gradient/base"
+    require_relative "color/rgb/gradient/linear"
+    require_relative "color/hsl/gradient/linear"
+    require_relative "color/oklch/gradient/linear"
 
     class << self
       # Parse a color string into the appropriate color space object.
