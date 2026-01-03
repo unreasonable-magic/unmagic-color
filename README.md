@@ -1,5 +1,7 @@
 # unmagic-color
 
+![Screenshot](docs/screenshot.png)
+
 A comprehensive Ruby color manipulation library with support for RGB, HSL, and OKLCH color spaces. Parse, convert, and manipulate colors with an intuitive API.
 
 ## Installation
