@@ -76,11 +76,15 @@ puts "\x1b[#{red.to_ansi}mRed text\x1b[0m"
 blue = Unmagic::Color.parse("#0000ff")
 puts "\x1b[#{blue.to_ansi(layer: :background)}mBlue background\x1b[0m"
 
-# Named ANSI colors use standard codes
-Unmagic::Color.parse("red").to_ansi      # => "31"
-Unmagic::Color.parse("green").to_ansi    # => "32"
+# Default mode is 24-bit true color
+Unmagic::Color.parse("red").to_ansi      # => "38;2;255;0;0"
+Unmagic::Color.parse("green").to_ansi    # => "38;2;0;128;0"
 
-# Custom colors use 24-bit true color
+# Named colors can use standard codes with palette16 mode
+Unmagic::Color.parse("red").to_ansi(mode: :palette16)    # => "91"
+Unmagic::Color.parse("green").to_ansi(mode: :palette16)  # => "92"
+
+# Custom colors also use 24-bit true color by default
 Unmagic::Color.parse("#6496c8").to_ansi  # => "38;2;100;150;200"
 
 # Parse ANSI codes back to colors
@@ -100,7 +104,7 @@ rgb = Unmagic::Color.parse("#FF5733")
 
 # Convert to HSL
 hsl = rgb.to_hsl
-puts hsl.hue.to_f        # => 9.0
+puts hsl.hue.to_f        # => 11.0
 puts hsl.saturation.to_f # => 100.0
 puts hsl.lightness.to_f  # => 60.0
 
@@ -109,7 +113,7 @@ oklch = rgb.to_oklch
 
 # Convert back to hex
 hex = hsl.to_rgb.to_hex
-puts hex  # => "#FF5733"
+puts hex  # => "#ff5833"
 ```
 
 ### Color Manipulation

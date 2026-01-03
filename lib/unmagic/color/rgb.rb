@@ -316,7 +316,7 @@ module Unmagic
         l = luminance
         # Approximate chroma from saturation and lightness
         hsl = to_hsl
-        c = (hsl.saturation / 100.0) * 0.2 * (1 - (l - 0.5).abs * 2)
+        c = hsl.saturation.to_ratio * 0.2 * (1 - (l - 0.5).abs * 2)
         h = hsl.hue
         Unmagic::Color::OKLCH.new(lightness: l, chroma: c, hue: h)
       end
