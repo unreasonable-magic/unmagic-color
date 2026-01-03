@@ -24,39 +24,6 @@ Or install it yourself as:
 gem install unmagic-color
 ```
 
-## Features
-
-- **Multiple Color Spaces**: RGB, HSL, and OKLCH support
-- **Flexible Parsing**: Parse colors from hex, CSS format strings, named colors, ANSI codes, or component values
-- **Named Colors**: Support for [X11 color names](https://en.wikipedia.org/wiki/X11_color_names) (red, blue, goldenrod, etc.)
-- **ANSI Terminal Colors**: Parse and generate ANSI escape codes for terminal output
-- **Color Conversions**: Seamlessly convert between color spaces
-- **Color Manipulation**: Lighten, darken, and blend colors
-- **Deterministic Generation**: Generate consistent colors from strings or seeds
-- **Luminance Calculation**: Determine if colors are light or dark
-- **Color Progressions**: Create color scales and palettes
-
-## Quick Start
-
-```ruby
-require 'unmagic/color'
-
-# Parse a color
-color = Unmagic::Color.parse("#FF5733")
-
-# Convert to different color spaces
-hsl = color.to_hsl
-oklch = color.to_oklch
-
-# Manipulate colors
-lighter = color.lighten(0.2)
-darker = color.darken(0.1)
-
-# Check luminance
-color.light?  # => false
-color.dark?   # => true
-```
-
 ## Usage Examples
 
 ### Parsing Colors
@@ -272,6 +239,81 @@ color.dark?   # => true
 # Choose contrasting text color
 text_color = color.light? ? "#000000" : "#FFFFFF"
 ```
+
+### Gradients
+
+Create smooth color transitions with gradients in RGB, HSL, or OKLCH color spaces:
+
+```ruby
+# Simple gradient - auto-detects color space
+gradient = Unmagic::Color::Gradient.linear(["#FF0000", "#0000FF"])
+bitmap = gradient.rasterize(width: 10)
+
+# Access the colors
+colors = bitmap.pixels[0]  # Array of 10 colors from red to blue
+colors.map(&:to_hex)
+# => ["#ff0000", "#e60019", "#cc0033", ..., "#0000ff"]
+
+# Create gradients with multiple stops
+gradient = Unmagic::Color::Gradient.linear([
+  "#FF0000",  # Red at start (0%)
+  "#00FF00",  # Green at middle (50%)
+  "#0000FF"   # Blue at end (100%)
+])
+bitmap = gradient.rasterize(width: 20)
+
+# Use explicit positions (like CSS linear-gradient)
+gradient = Unmagic::Color::Gradient.linear([
+  ["#FF0000", 0.0],   # Red at start
+  ["#FFFF00", 0.3],   # Yellow at 30%
+  "#00FF00",          # Green auto-balances at 65%
+  ["#0000FF", 1.0]    # Blue at end
+])
+
+# Specify gradient direction
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "to right"
+)
+
+# Use angle directions
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "45deg"  # or just 45
+)
+
+# 2D gradients with width and height
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "to bottom right"
+)
+bitmap = gradient.rasterize(width: 100, height: 100)
+
+# Access individual pixels
+color = bitmap.at(50, 50)  # Get color at x=50, y=50
+
+# Choose color space for different effects
+# RGB gradients - direct color component interpolation
+rgb_gradient = Unmagic::Color::RGB::Gradient::Linear.build(["#FF0000", "#0000FF"])
+
+# HSL gradients - smoother transitions through the color wheel
+hsl_gradient = Unmagic::Color::HSL::Gradient::Linear.build([
+  "hsl(0, 100%, 50%)",    # Red
+  "hsl(240, 100%, 50%)"   # Blue
+])
+
+# OKLCH gradients - perceptually uniform transitions
+oklch_gradient = Unmagic::Color::OKLCH::Gradient::Linear.build([
+  "oklch(0.5 0.15 30)",   # Orange
+  "oklch(0.7 0.15 240)"   # Blue
+])
+```
+
+**Supported direction formats:**
+- Keywords: `"to top"`, `"to right"`, `"to bottom left"`, etc.
+- From/to: `"from left to right"`, `"from bottom to top"`
+- Angles: `"45deg"`, `"90deg"`, or numeric values like `45`, `90`
+- Direction objects: `Unmagic::Color::Units::Degrees::Direction::LEFT_TO_RIGHT`
 
 ## Color Spaces
 
