@@ -32,6 +32,7 @@ module Unmagic
       #     end
       #   end
       class Base
+        # Error raised for gradient base class issues.
         class Error < Color::Error; end
 
         attr_reader :stops, :direction

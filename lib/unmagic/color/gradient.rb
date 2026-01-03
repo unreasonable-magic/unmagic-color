@@ -48,6 +48,7 @@ module Unmagic
     #   gradient = Unmagic::Color::Gradient.linear(["#FF0000", "#0000FF"], direction: "to right")
     #   bitmap = gradient.rasterize(width: 10, height: 1)
     module Gradient
+      # Base error class for gradient-related errors.
       class Error < Color::Error; end
 
       class << self

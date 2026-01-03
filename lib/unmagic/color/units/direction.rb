@@ -185,12 +185,19 @@ module Unmagic
 
           # Predefined direction constants
           BOTTOM_TO_TOP = new(from: Degrees::BOTTOM, to: Degrees::TOP).freeze
+          # Left to right direction (horizontal)
           LEFT_TO_RIGHT = new(from: Degrees::LEFT, to: Degrees::RIGHT).freeze
+          # Top to bottom direction (vertical, default)
           TOP_TO_BOTTOM = new(from: Degrees::TOP, to: Degrees::BOTTOM).freeze
+          # Right to left direction (horizontal)
           RIGHT_TO_LEFT = new(from: Degrees::RIGHT, to: Degrees::LEFT).freeze
+          # Bottom-left to top-right diagonal direction
           BOTTOM_LEFT_TO_TOP_RIGHT = new(from: Degrees::BOTTOM_LEFT, to: Degrees::TOP_RIGHT).freeze
+          # Top-left to bottom-right diagonal direction
           TOP_LEFT_TO_BOTTOM_RIGHT = new(from: Degrees::TOP_LEFT, to: Degrees::BOTTOM_RIGHT).freeze
+          # Top-right to bottom-left diagonal direction
           TOP_RIGHT_TO_BOTTOM_LEFT = new(from: Degrees::TOP_RIGHT, to: Degrees::BOTTOM_LEFT).freeze
+          # Bottom-right to top-left diagonal direction
           BOTTOM_RIGHT_TO_TOP_LEFT = new(from: Degrees::BOTTOM_RIGHT, to: Degrees::TOP_LEFT).freeze
         end
       end

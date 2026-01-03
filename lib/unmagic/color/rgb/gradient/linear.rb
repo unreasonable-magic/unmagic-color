@@ -3,6 +3,7 @@
 module Unmagic
   class Color
     class RGB
+      # Gradient generation in RGB color space.
       module Gradient
         # Linear gradient interpolation in RGB color space.
         #

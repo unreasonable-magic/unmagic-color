@@ -3,6 +3,7 @@
 module Unmagic
   class Color
     class HSL
+      # Gradient generation in HSL color space.
       module Gradient
         # Linear gradient interpolation in HSL color space.
         #

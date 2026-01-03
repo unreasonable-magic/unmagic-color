@@ -2,6 +2,7 @@
 
 module Unmagic
   class Color
+    # Unit types for color manipulation.
     module Units
       # Represents an angle in degrees (0-360°).
       #
@@ -46,6 +47,7 @@ module Unmagic
       class Degrees
         include Comparable
 
+        # Error raised when parsing invalid degree values.
         class ParseError < Color::Error; end
 
         attr_reader :value, :name, :aliases
@@ -211,12 +213,19 @@ module Unmagic
 
         # Predefined degree constants
         TOP = new(value: 0, name: "top", aliases: ["north"]).freeze
+        # Right direction (90°, east)
         RIGHT = new(value: 90, name: "right", aliases: ["east"]).freeze
+        # Bottom direction (180°, south)
         BOTTOM = new(value: 180, name: "bottom", aliases: ["south"]).freeze
+        # Left direction (270°, west)
         LEFT = new(value: 270, name: "left", aliases: ["west"]).freeze
+        # Top-right diagonal direction (45°, northeast)
         TOP_RIGHT = new(value: 45, name: "top right", aliases: ["topright", "northeast", "north east"]).freeze
+        # Bottom-right diagonal direction (135°, southeast)
         BOTTOM_RIGHT = new(value: 135, name: "bottom right", aliases: ["bottomright", "southeast", "south east"]).freeze
+        # Bottom-left diagonal direction (225°, southwest)
         BOTTOM_LEFT = new(value: 225, name: "bottom left", aliases: ["bottomleft", "southwest", "south west"]).freeze
+        # Top-left diagonal direction (315°, northwest)
         TOP_LEFT = new(value: 315, name: "top left", aliases: ["topleft", "northwest", "north west"]).freeze
       end
     end

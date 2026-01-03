@@ -3,6 +3,7 @@
 module Unmagic
   class Color
     class OKLCH
+      # Gradient generation in OKLCH color space.
       module Gradient
         # Linear gradient interpolation in OKLCH color space.
         #

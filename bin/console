@@ -120,30 +120,30 @@ end
 puts colorize_banner
 puts "https://github.com/unmagic/unmagic-color"
 puts ""
-puts "#{comment("# Parse colors")}"
-puts "#{highlight('parse("#ff5733")')}"
-puts "#{highlight("rgb(255, 87, 51)")}"
-puts "#{highlight("hsl(9, 100, 60)")}"
-puts "#{highlight("oklch(0.65, 0.22, 30)")}"
-puts "#{highlight('parse("rebeccapurple")')}"
+puts comment("# Parse colors")
+puts highlight('parse("#ff5733")')
+puts highlight("rgb(255, 87, 51)")
+puts highlight("hsl(9, 100, 60)")
+puts highlight("oklch(0.65, 0.22, 30)")
+puts highlight('parse("rebeccapurple")')
 puts ""
-puts "#{comment("# Manipulate colors")}"
-puts "#{highlight('color = parse("#ff5733")')}"
-puts "#{highlight("color.lighten(0.1)")}"
-puts "#{highlight("color.darken(0.1)")}"
-puts "#{highlight("color.saturate(0.1)")}"
-puts "#{highlight("color.desaturate(0.1)")}"
-puts "#{highlight("color.rotate(30)")}"
+puts comment("# Manipulate colors")
+puts highlight('color = parse("#ff5733")')
+puts highlight("color.lighten(0.1)")
+puts highlight("color.darken(0.1)")
+puts highlight("color.saturate(0.1)")
+puts highlight("color.desaturate(0.1)")
+puts highlight("color.rotate(30)")
 puts ""
-puts "#{comment("# Convert between formats")}"
-puts "#{highlight("color.to_rgb")}"
-puts "#{highlight("color.to_hsl")}"
-puts "#{highlight("color.to_oklch")}"
-puts "#{highlight("color.to_hex")}"
-puts "#{highlight("color.to_css_oklch")}"
+puts comment("# Convert between formats")
+puts highlight("color.to_rgb")
+puts highlight("color.to_hsl")
+puts highlight("color.to_oklch")
+puts highlight("color.to_hex")
+puts highlight("color.to_css_oklch")
 puts ""
-puts "#{comment("# Create gradients")}"
-puts "#{highlight('gradient(:linear, ["#FF0000", "#0000FF"]).rasterize(width: 10).pixels[0].map(&:to_hex)')}"
+puts comment("# Create gradients")
+puts highlight('gradient(:linear, ["#FF0000", "#0000FF"]).rasterize(width: 10).pixels[0].map(&:to_hex)')
 puts ""
 
 # Configure IRB with custom prompt
