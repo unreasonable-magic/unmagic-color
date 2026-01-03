@@ -88,6 +88,23 @@ module Unmagic
             !@data.nil?
           end
 
+          # Calculate memory size of loaded database.
+          #
+          # @return [Integer] Memory size in bytes
+          # @api private
+          def memsize
+            require "objspace"
+
+            memory = ObjectSpace.memsize_of(data)
+
+            data.each do |key, value|
+              memory += ObjectSpace.memsize_of(key)
+              memory += ObjectSpace.memsize_of(value)
+            end
+
+            memory
+          end
+
           private
 
           # Lazy load data from file.
