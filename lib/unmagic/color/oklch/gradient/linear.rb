@@ -24,17 +24,26 @@ module Unmagic
         #       ["oklch(0.5 0.15 30)", 0.0],
         #       ["oklch(0.7 0.15 240)", 1.0]
         #     ],
-        #     steps: 10
+        #     direction: "to right"
         #   )
+        #   bitmap = gradient.rasterize(width: 100)
         #
-        #   # Use color objects
+        #   # Simple two-color gradient
+        #   gradient = Unmagic::Color::OKLCH::Gradient::Linear.build(
+        #     ["oklch(0.3 0.15 30)", "oklch(0.7 0.15 240)"],
+        #     direction: "to bottom"
+        #   )
+        #   bitmap = gradient.rasterize(width: 1, height: 50)
+        #
+        #   # Angled gradient with color objects
         #   gradient = Unmagic::Color::OKLCH::Gradient::Linear.build(
         #     [
-        #       [Unmagic::Color::OKLCH.new(lightness: 0.3, chroma: 0.15, hue: 30), 0.0],
-        #       [Unmagic::Color::OKLCH.new(lightness: 0.7, chroma: 0.15, hue: 240), 1.0]
+        #       Unmagic::Color::OKLCH.new(lightness: 0.3, chroma: 0.15, hue: 30),
+        #       Unmagic::Color::OKLCH.new(lightness: 0.7, chroma: 0.15, hue: 240)
         #     ],
-        #     steps: 15
+        #     direction: "45deg"
         #   )
+        #   bitmap = gradient.rasterize(width: 100, height: 100)
         class Linear < Unmagic::Color::Gradient::Base
           class << self
             # Get the OKLCH color class.

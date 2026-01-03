@@ -7,8 +7,8 @@ module Unmagic
         # Linear gradient interpolation in RGB color space.
         #
         # Creates smooth color transitions by interpolating RGB components linearly
-        # between color stops. Each color stop has a position (0.0-1.0) and generates
-        # a specified number of intermediate colors.
+        # between color stops. Each color stop has a position (0.0-1.0) that defines
+        # where the color appears in the gradient.
         #
         # ## RGB Interpolation
         #
@@ -18,14 +18,14 @@ module Unmagic
         #
         # ## Examples
         #
-        #   # Simple two-color gradient
+        #   # Simple horizontal gradient
         #   gradient = Unmagic::Color::RGB::Gradient::Linear.build(
-        #     [["#FF0000", 0.0], ["#0000FF", 1.0]],
-        #     steps: 10
+        #     ["#FF0000", "#0000FF"],
+        #     direction: "to right"
         #   )
-        #   bitmap = gradient.rasterize
+        #   bitmap = gradient.rasterize(width: 10)
         #   bitmap.pixels[0].map(&:to_hex)
-        #   # => ["#ff0000", "#e60019", ..., "#0000ff"]
+        #   #=> ["#ff0000", "#e60019", ..., "#0000ff"]
         #
         #   # Gradient with intermediate stops
         #   gradient = Unmagic::Color::RGB::Gradient::Linear.build(
@@ -34,8 +34,16 @@ module Unmagic
         #       ["#00FF00", 0.5],   # Green at middle
         #       ["#0000FF", 1.0]    # Blue at end
         #     ],
-        #     steps: 20
+        #     direction: "to bottom"
         #   )
+        #   bitmap = gradient.rasterize(width: 1, height: 20)
+        #
+        #   # Angled gradient
+        #   gradient = Unmagic::Color::RGB::Gradient::Linear.build(
+        #     ["#FF0000", "#0000FF"],
+        #     direction: "45deg"
+        #   )
+        #   bitmap = gradient.rasterize(width: 100, height: 100)
         #
         #   # Use Stop objects directly
         #   stops = [
@@ -48,7 +56,8 @@ module Unmagic
         #       position: 1.0
         #     )
         #   ]
-        #   gradient = Unmagic::Color::RGB::Gradient::Linear.new(stops, steps: 10)
+        #   direction = Unmagic::Color::Units::Degrees::Direction::LEFT_TO_RIGHT
+        #   gradient = Unmagic::Color::RGB::Gradient::Linear.new(stops, direction: direction)
         class Linear < Unmagic::Color::Gradient::Base
           class << self
             # Get the RGB color class.

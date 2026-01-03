@@ -25,17 +25,26 @@ module Unmagic
         #       ["hsl(120, 100%, 50%)", 0.5],   # Green
         #       ["hsl(240, 100%, 50%)", 1.0]    # Blue
         #     ],
-        #     steps: 20
+        #     direction: "to right"
         #   )
+        #   bitmap = gradient.rasterize(width: 100)
         #
-        #   # Use color objects
+        #   # Simple two-color gradient
+        #   gradient = Unmagic::Color::HSL::Gradient::Linear.build(
+        #     ["hsl(0, 100%, 50%)", "hsl(240, 100%, 50%)"],
+        #     direction: "to bottom"
+        #   )
+        #   bitmap = gradient.rasterize(width: 1, height: 50)
+        #
+        #   # Angled gradient with color objects
         #   gradient = Unmagic::Color::HSL::Gradient::Linear.build(
         #     [
-        #       [Unmagic::Color::HSL.new(hue: 0, saturation: 100, lightness: 50), 0.0],
-        #       [Unmagic::Color::HSL.new(hue: 240, saturation: 100, lightness: 50), 1.0]
+        #       Unmagic::Color::HSL.new(hue: 0, saturation: 100, lightness: 50),
+        #       Unmagic::Color::HSL.new(hue: 240, saturation: 100, lightness: 50)
         #     ],
-        #     steps: 10
+        #     direction: "45deg"
         #   )
+        #   bitmap = gradient.rasterize(width: 100, height: 100)
         class Linear < Unmagic::Color::Gradient::Base
           class << self
             # Get the HSL color class.

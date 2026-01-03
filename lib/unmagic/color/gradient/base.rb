@@ -57,7 +57,11 @@ module Unmagic
           # Non-positioned colors auto-balance between their surrounding positioned neighbors.
           #
           # @param colors_or_tuples [Array] Array of colors or [color, position] pairs (can be mixed)
-          # @param direction [String, nil] Optional direction ("45deg", "to right", etc.)
+          # @param direction [String, Numeric, Degrees, Direction, nil] Optional gradient direction
+          #   - Direction strings: "to top", "from left to right", "45deg", "90°"
+          #   - Numeric degrees: 45, 90, 180
+          #   - Degrees/Direction instances
+          #   - Defaults to "to bottom" (180°) if omitted
           # @return [Base] New gradient instance
           #
           # @example All auto-balanced positions
@@ -67,13 +71,18 @@ module Unmagic
           # @example All explicit positions
           #   RGB::Gradient::Linear.build([["#FF0000", 0.0], ["#00FF00", 0.3], ["#0000FF", 1.0]])
           #
-          # @example Mixed (like CSS linear-gradient)
+          # @example Mixed positions (like CSS linear-gradient)
           #   RGB::Gradient::Linear.build(["#FF0000", ["#FFFF00", 0.3], "#00FF00", ["#0000FF", 0.9], "#FF00FF"])
           #   # Positions: 0.0, 0.3, 0.6, 0.9, 1.0
           #   # (red at start, yellow at 30%, green auto-balances at 60%, blue at 90%, purple at end)
           #
-          # @example With direction
-          #   RGB::Gradient::Linear.build(["#FF0000", "#0000FF"], direction: "45deg")
+          # @example With direction keyword
+          #   RGB::Gradient::Linear.build(["#FF0000", "#0000FF"], direction: "to right")
+          #   RGB::Gradient::Linear.build(["#FF0000", "#0000FF"], direction: "from left to right")
+          #
+          # @example With numeric direction
+          #   RGB::Gradient::Linear.build(["#FF0000", "#0000FF"], direction: 45)
+          #   RGB::Gradient::Linear.build(["#FF0000", "#0000FF"], direction: "90deg")
           def build(colors_or_tuples, direction: nil)
             # Parse colors and detect which have explicit positions
             parsed = colors_or_tuples.map do |item|
@@ -181,7 +190,7 @@ module Unmagic
         # Create a new gradient.
         #
         # @param stops [Array<Stop>] Array of color stops
-        # @param direction [String, nil] Optional direction ("45deg", "to right", etc.)
+        # @param direction [Direction, nil] Optional Direction instance (defaults to TOP_TO_BOTTOM)
         #
         # @raise [Error] If stops is not an array
         # @raise [Error] If there are fewer than 2 stops
