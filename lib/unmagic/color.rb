@@ -42,6 +42,7 @@ module Unmagic
     # @private
     class ParseError < Error; end
 
+    require_relative "color/version"
     require_relative "color/rgb"
     require_relative "color/rgb/hex"
     require_relative "color/rgb/named"

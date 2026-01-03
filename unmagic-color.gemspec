@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative "lib/unmagic/color/version"
+
 Gem::Specification.new do |spec|
   spec.name        = "unmagic-color"
-  spec.version     = "0.1.0"
+  spec.version     = Unmagic::Color::VERSION
   spec.authors     = ["Keith Pitt"]
   spec.email       = ["keith@unreasonable-magic.com"]
   spec.summary     = "Comprehensive color manipulation library"
