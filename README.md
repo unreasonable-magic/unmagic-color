@@ -45,9 +45,14 @@ color = Unmagic::Color::HSL.new(hue: 9, saturation: 100, lightness: 60)
 color = Unmagic::Color.parse("oklch(0.65 0.15 30)")
 color = Unmagic::Color::OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 30)
 
-# From X11 named colors (https://en.wikipedia.org/wiki/X11_color_names)
+# From named colors (X11 is the default and CSS/W3C databases)
 color = Unmagic::Color.parse("goldenrod")
 color = Unmagic::Color["red"]
+
+# Pass db name as prefix for specific lookup:
+color = Unmagic::Color.parse("css:red")
+color = Unmagic::Color.parse("w3c:gray") # w3c is alias for css
+color = Unmagic::Color.parse("x11:red")
 
 # Named colors are case-insensitive and whitespace-tolerant
 color = Unmagic::Color.parse("Golden Rod")  # Same as "goldenrod"
@@ -78,7 +83,7 @@ puts "\x1b[#{blue.to_ansi(layer: :background)}mBlue background\x1b[0m"
 
 # Default mode is 24-bit true color
 Unmagic::Color.parse("red").to_ansi      # => "38;2;255;0;0"
-Unmagic::Color.parse("green").to_ansi    # => "38;2;0;128;0"
+Unmagic::Color.parse("css:green").to_ansi    # => "38;2;0;128;0"
 
 # Named colors can use standard codes with palette16 mode
 Unmagic::Color.parse("red").to_ansi(mode: :palette16)    # => "91"

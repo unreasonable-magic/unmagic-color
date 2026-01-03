@@ -3,3 +3,4 @@ doc
 .yardoc
 .claude
 pkg
+tmp/
