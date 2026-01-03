@@ -59,12 +59,8 @@ module Unmagic
             raise self.class::Error, "width must be at least 1" if width < 1
             raise self.class::Error, "height must be at least 1" if height < 1
 
-            # Parse direction to degrees
-            degrees = if @direction
-              Unmagic::Color::Units::Degrees.build(@direction).value
-            else
-              180.0 # Default to "to bottom"
-            end
+            # Get the angle from the direction's "to" component
+            degrees = @direction.to.value
 
             # Generate pixels row by row
             pixels = Array.new(height) do |y|

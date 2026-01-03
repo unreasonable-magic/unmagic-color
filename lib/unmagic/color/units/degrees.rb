@@ -3,48 +3,91 @@
 module Unmagic
   class Color
     module Units
-      # Represents an angle in degrees with CSS gradient direction keyword support.
+      # Represents an angle in degrees (0-360°).
       #
-      # Provides a unified way to work with gradient directions, supporting both
-      # numeric degrees and CSS direction keywords.
+      # Supports numeric values, degree strings, and named direction keywords.
+      # Values are automatically wrapped to the 0-360 range.
       #
       # ## Supported Formats
       #
       # - Numeric: `225`, `45.5`
-      # - Degree strings: `"225deg"`, `"45deg"`
-      # - CSS keywords: `"to top"`, `"to right"`, `"to bottom left"`, etc.
+      # - Degree strings: `"225deg"`, `"45.5deg"`, `"-45deg"`, `"225°"`, `"45.5°"`
+      # - Named directions: `"top"`, `"bottom left"`, `"north"`, `"southwest"`, etc.
       #
-      # ## Direction Keyword Mappings
+      # ## Named Direction Keywords
       #
-      # - `to top` → 0°
-      # - `to right` → 90°
-      # - `to bottom` → 180°
-      # - `to left` → 270°
-      # - `to top right` or `to right top` → 45°
-      # - `to bottom right` or `to right bottom` → 135°
-      # - `to bottom left` or `to left bottom` → 225°
-      # - `to top left` or `to left top` → 315°
+      # - Cardinal: `"top"` (0°), `"right"` (90°), `"bottom"` (180°), `"left"` (270°)
+      # - Diagonal: `"top right"` (45°), `"bottom right"` (135°), `"bottom left"` (225°), `"top left"` (315°)
+      # - Aliases: `"north"`, `"south"`, `"east"`, `"west"`, `"northeast"`, etc.
       #
-      # @example Parse from different formats
-      #   Degrees.build(225)
-      #   #=> 225.0 degrees
+      # @example Numeric values
+      #   Degrees.build(225)           #=> 225.0°
+      #   Degrees.build(45.5)          #=> 45.5°
+      #   Degrees.build(-45)           #=> 315.0° (wrapped)
       #
-      #   Degrees.build("225deg")
-      #   #=> 225.0 degrees
+      # @example Degree strings
+      #   Degrees.build("225deg")      #=> 225.0°
+      #   Degrees.build("45.5deg")     #=> 45.5°
+      #   Degrees.build("225°")        #=> 225.0°
       #
-      #   Degrees.build("to left bottom")
-      #   #=> 225.0 degrees
+      # @example Named directions
+      #   Degrees.build("top")         #=> 0.0°
+      #   Degrees.build("bottom left") #=> 225.0°
+      #   Degrees.build("north")       #=> 0.0° (alias for "top")
       #
-      #   Degrees.build("to bottom left")
-      #   #=> 225.0 degrees (same as above)
+      # @example Constants
+      #   Degrees::TOP                 #=> 0.0°
+      #   Degrees::BOTTOM_LEFT         #=> 225.0°
+      #
+      # @example String output
+      #   Degrees::TOP.to_s            #=> "top"
+      #   Degrees::TOP.to_css          #=> "0.0deg"
+      #   Degrees.new(value: 123).to_s #=> "123.0°"
       class Degrees
         include Comparable
 
         class ParseError < Color::Error; end
 
-        attr_reader :value
+        attr_reader :value, :name, :aliases
 
         class << self
+          # All predefined degree constants
+          #
+          # @return [Array<Degrees>] All constant degree values
+          def all
+            all_by_name.values.uniq
+          end
+
+          # Find a constant by name or alias
+          #
+          # @param search [String] Name or alias to search for
+          # @return [Degrees, nil] Matching constant or nil
+          def find_by_name(search)
+            normalized = search.strip.downcase
+            all_by_name.fetch(normalized)
+          rescue KeyError
+            nil
+          end
+
+          private
+
+          # Hash mapping all names and aliases to their constants
+          #
+          # @return [Hash<String, Degrees>] Name/alias to constant mapping
+          def all_by_name
+            @all_by_name ||= begin
+              constants = [TOP, RIGHT, BOTTOM, LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT, TOP_LEFT]
+              hash = {}
+              constants.each do |constant|
+                hash[constant.name] = constant
+                constant.aliases.each { |alias_name| hash[alias_name] = constant }
+              end
+              hash
+            end
+          end
+
+          public
+
           # Build a Degrees instance from various input formats.
           #
           # @param input [Numeric, String, Degrees] The angle to parse
@@ -82,70 +125,31 @@ module Unmagic
 
             input = input.strip
 
-            # Handle "deg" suffix (case-insensitive)
-            if input.match?(/\A-?\d+(?:\.\d+)?deg\z/i)
-              value = input.gsub(/deg$/i, "").to_f
-              return new(value: value)
-            end
+            # Try to find a named constant first
+            constant = find_by_name(input)
+            return constant if constant
 
-            # Handle CSS direction keywords (case-insensitive)
-            if input.match?(/\Ato\s+/i)
-              return parse_direction(input)
-            end
+            # Remove "deg" or "°" suffix if present
+            input = input.sub(/deg\z/i, "").sub(/°\z/, "")
 
-            # Try parsing as plain number
+            # Try parsing as number
             if input.match?(/\A-?\d+(?:\.\d+)?\z/)
               return new(value: input.to_f)
             end
 
             raise ParseError, "Invalid degrees format: #{input.inspect}"
           end
-
-          private
-
-          # Parse CSS direction keywords.
-          #
-          # @param input [String] Direction string (e.g., "to top", "to bottom left")
-          # @return [Degrees] Parsed degrees
-          # @raise [ParseError] If direction is invalid
-          def parse_direction(input)
-            # Remove "to " prefix and normalize whitespace
-            direction = input.sub(/\Ato\s+/i, "").strip.downcase
-
-            # Split into components and sort for consistent matching
-            components = direction.split(/\s+/).sort
-
-            # Map component combinations to degrees
-            degrees = case components
-            in ["top"]
-              0
-            in ["right"]
-              90
-            in ["bottom"]
-              180
-            in ["left"]
-              270
-            in ["right", "top"]
-              45
-            in ["bottom", "right"]
-              135
-            in ["bottom", "left"]
-              225
-            in ["left", "top"]
-              315
-            else
-              raise ParseError, "Invalid direction: #{input.inspect}"
-            end
-
-            new(value: degrees)
-          end
         end
 
         # Create a new Degrees instance.
         #
         # @param value [Numeric] Angle in degrees (wraps to 0-360 range)
-        def initialize(value:)
+        # @param name [String, nil] Optional name for this degree (e.g., "top", "bottom")
+        # @param aliases [Array<String>] Optional aliases for this degree (e.g., ["north"])
+        def initialize(value:, name: nil, aliases: [])
           @value = value.to_f % 360
+          @name = name
+          @aliases = aliases
         end
 
         # Convert to float value.
@@ -155,11 +159,26 @@ module Unmagic
           @value
         end
 
+        # Get the opposite direction (180 degrees away).
+        #
+        # @return [Degrees] Opposite degree
+        def opposite
+          opposite_value = (@value + 180) % 360
+          self.class.all.find { |d| d.value == opposite_value } || self.class.new(value: opposite_value)
+        end
+
+        # Convert to CSS string format.
+        #
+        # @return [String] CSS degree string (e.g., "225.0deg")
+        def to_css
+          "#{@value}deg"
+        end
+
         # Convert to string representation.
         #
-        # @return [String] Formatted as "Xdeg"
+        # @return [String] Canonical string format that can be parsed back
         def to_s
-          "#{@value}deg"
+          @name || "#{@value}°"
         end
 
         # Compare two Degrees instances.
@@ -189,6 +208,16 @@ module Unmagic
             false
           end
         end
+
+        # Predefined degree constants
+        TOP = new(value: 0, name: "top", aliases: ["north"]).freeze
+        RIGHT = new(value: 90, name: "right", aliases: ["east"]).freeze
+        BOTTOM = new(value: 180, name: "bottom", aliases: ["south"]).freeze
+        LEFT = new(value: 270, name: "left", aliases: ["west"]).freeze
+        TOP_RIGHT = new(value: 45, name: "top right", aliases: ["topright", "northeast", "north east"]).freeze
+        BOTTOM_RIGHT = new(value: 135, name: "bottom right", aliases: ["bottomright", "southeast", "south east"]).freeze
+        BOTTOM_LEFT = new(value: 225, name: "bottom left", aliases: ["bottomleft", "southwest", "south west"]).freeze
+        TOP_LEFT = new(value: 315, name: "top left", aliases: ["topleft", "northwest", "north west"]).freeze
       end
     end
   end
