@@ -7,6 +7,7 @@ gemspec
 group :development, :test do
   gem "rake"
   gem "irb"
+  gem "benchmark"
 
   # For documentation
   gem "rdoc"
