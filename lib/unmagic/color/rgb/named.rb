@@ -38,12 +38,19 @@ module Unmagic
         # Database for loading and accessing color data from files.
         #
         # Handles lazy loading, name normalization, and color lookup.
+        # @api private
         class Database
+          # @api private
           attr_reader :name, :aliases
 
-          def initialize(name, filepath, aliases: [])
-            @name = name
+          # Initialize a new color database.
+          #
+          # @param filepath [String] Path to the database file
+          # @param name [String, nil] The name of the database (e.g., "x11", "css")
+          # @param aliases [Array<String>] Alternative names for the database
+          def initialize(filepath, name: nil, aliases: [])
             @filepath = filepath
+            @name = name
             @aliases = aliases
             @data = nil
           end
@@ -131,10 +138,10 @@ module Unmagic
         class ParseError < Color::Error; end
 
         # X11 color database (658 colors)
-        X11 = Database.new("x11", File.join(Color::DATA_PATH, "x11.txt"))
+        X11 = Database.new(File.join(Color::DATA_PATH, "x11.txt"), name: "x11")
 
         # CSS/W3C color database (148 colors)
-        CSS = Database.new("css", File.join(Color::DATA_PATH, "css.txt"), aliases: ["w3c"])
+        CSS = Database.new(File.join(Color::DATA_PATH, "css.txt"), name: "css", aliases: ["w3c"])
 
         class << self
           # Parse a named color and return its RGB representation.

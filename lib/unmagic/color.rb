@@ -42,8 +42,10 @@ module Unmagic
     # @private
     class ParseError < Error; end
 
+    # @api private
+    DATA_PATH = File.join(__dir__, "..", "..", "data")
+
     require_relative "color/version"
-    require_relative "color/data"
     require_relative "color/rgb"
     require_relative "color/rgb/hex"
     require_relative "color/rgb/named"
