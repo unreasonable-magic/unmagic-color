@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# spec/lib/unmagic/color/string/hash_function_spec.rb
 RSpec.describe(Unmagic::Color::String::HashFunction) do
   describe "SUM" do
     let(:algorithim) { Unmagic::Color::String::HashFunction::SUM }
@@ -207,7 +206,7 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
 
   describe ".all" do
     it "returns hash of all available algorithms" do
-      algorithms = descibed_class.all
+      algorithms = Unmagic::Color::String::HashFunction.all
       expect(algorithms).to(be_a(Hash))
       expect(algorithms.keys).to(include(:sum, :djb2, :bkdr, :fnv1a, :sdbm, :java, :crc32, :md5, :position, :perceptual, :color_aware, :murmur3, :default))
 
