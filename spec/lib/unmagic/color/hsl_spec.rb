@@ -445,7 +445,7 @@ RSpec.describe(Unmagic::Color::HSL) do
     end
 
     describe "parsing with alpha" do
-      context "modern format with slash separator" do
+      context "with modern format slash separator" do
         it "parses hsl(H S% L% / alpha) format" do
           hsl = parse("hsl(240 50% 75% / 0.5)")
           expect(hsl.hue.value).to(eq(240))
@@ -460,7 +460,7 @@ RSpec.describe(Unmagic::Color::HSL) do
         end
       end
 
-      context "legacy hsla format" do
+      context "with legacy hsla format" do
         it "parses hsla(H, S%, L%, alpha) format" do
           hsl = parse("hsla(240, 50%, 75%, 0.5)")
           expect(hsl.hue.value).to(eq(240))

@@ -113,27 +113,27 @@ RSpec.describe(Unmagic::Color) do
   describe "Alpha" do
     describe "#to_css" do
       it "formats fully opaque as '1'" do
-        alpha = Unmagic::Color::Alpha.new(100)
+        alpha = Unmagic::Color::Alpha.new(value: 100)
         expect(alpha.to_css).to(eq("1"))
       end
 
       it "formats fully transparent as '0'" do
-        alpha = Unmagic::Color::Alpha.new(0)
+        alpha = Unmagic::Color::Alpha.new(value: 0)
         expect(alpha.to_css).to(eq("0"))
       end
 
       it "formats semi-transparent as decimal ratio" do
-        alpha = Unmagic::Color::Alpha.new(50)
+        alpha = Unmagic::Color::Alpha.new(value: 50)
         expect(alpha.to_css).to(eq("0.5"))
       end
 
       it "formats 75% as '0.75'" do
-        alpha = Unmagic::Color::Alpha.new(75)
+        alpha = Unmagic::Color::Alpha.new(value: 75)
         expect(alpha.to_css).to(eq("0.75"))
       end
 
       it "strips trailing zeros" do
-        alpha = Unmagic::Color::Alpha.new(25)
+        alpha = Unmagic::Color::Alpha.new(value: 25)
         expect(alpha.to_css).to(eq("0.25"))
       end
     end

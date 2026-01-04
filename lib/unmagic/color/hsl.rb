@@ -95,10 +95,9 @@ module Unmagic
       def initialize(hue:, saturation:, lightness:, alpha: nil)
         super()
         @hue = Color::Hue.new(value: hue)
-        @saturation = Color::Saturation.new(saturation)
-        @lightness = Color::Lightness.new(lightness)
-        alpha_value = alpha.nil? ? 100 : alpha
-        @alpha = alpha_value.is_a?(Color::Alpha) ? alpha_value : Color::Alpha.new(alpha_value)
+        @saturation = Color::Saturation.new(value: saturation)
+        @lightness = Color::Lightness.new(value: lightness)
+        @alpha = Color::Alpha.build(alpha) || Color::Alpha::DEFAULT
       end
 
       class << self
@@ -345,7 +344,7 @@ module Unmagic
       def lighten(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
         new_lightness = @lightness.value + (100 - @lightness.value) * amount
-        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
+        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness, alpha: @alpha.value)
       end
 
       # Create a darker version by decreasing lightness.
@@ -362,7 +361,7 @@ module Unmagic
       def darken(amount = 0.1)
         amount = amount.to_f.clamp(0, 1)
         new_lightness = @lightness.value * (1 - amount)
-        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness)
+        Unmagic::Color::HSL.new(hue: @hue.value, saturation: @saturation.value, lightness: new_lightness, alpha: @alpha.value)
       end
 
       # Check if two HSL colors are equal.
@@ -432,7 +431,7 @@ module Unmagic
           end
 
           # Create new HSL color with computed values
-          color = self.class.new(hue: @hue.value, saturation: new_saturation, lightness: new_lightness)
+          color = self.class.build(hue: @hue.value, saturation: new_saturation, lightness: new_lightness, alpha: @alpha.value)
           colors << color
         end
 

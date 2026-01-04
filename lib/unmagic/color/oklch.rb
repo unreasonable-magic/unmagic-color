@@ -96,11 +96,10 @@ module Unmagic
       #   OKLCH.new(lightness: 0.60, chroma: 0.25, hue: 30)
       def initialize(lightness:, chroma:, hue:, alpha: nil)
         super()
-        @lightness = Color::Lightness.new(lightness * 100) # Convert 0-1 to percentage
+        @lightness = Color::Lightness.new(value: lightness * 100) # Convert 0-1 to percentage
         @chroma = Color::Chroma.new(value: chroma)
         @hue = Color::Hue.new(value: hue)
-        alpha_value = alpha.nil? ? 100 : alpha
-        @alpha = alpha_value.is_a?(Color::Alpha) ? alpha_value : Color::Alpha.new(alpha_value)
+        @alpha = Color::Alpha.build(alpha) || Color::Alpha::DEFAULT
       end
 
       # Get the lightness as a ratio (0.0-1.0).
@@ -319,7 +318,7 @@ module Unmagic
       def lighten(amount = 0.03)
         current_lightness = @lightness.to_ratio
         new_lightness = clamp01(current_lightness + amount)
-        self.class.new(lightness: new_lightness, chroma: @chroma.value, hue: @hue.value)
+        self.class.new(lightness: new_lightness, chroma: @chroma.value, hue: @hue.value, alpha: @alpha.value)
       end
 
       # Create a darker version by decreasing lightness.

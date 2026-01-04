@@ -84,8 +84,7 @@ module Unmagic
         @red = Color::Red.new(value: red)
         @green = Color::Green.new(value: green)
         @blue = Color::Blue.new(value: blue)
-        alpha_value = alpha.nil? ? 100 : alpha
-        @alpha = alpha_value.is_a?(Color::Alpha) ? alpha_value : Color::Alpha.new(alpha_value)
+        @alpha = Color::Alpha.build(alpha) || Color::Alpha::DEFAULT
       end
 
       class << self

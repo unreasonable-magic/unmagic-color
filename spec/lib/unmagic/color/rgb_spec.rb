@@ -603,14 +603,14 @@ RSpec.describe(Unmagic::Color::RGB) do
       end
 
       it "accepts Alpha instance" do
-        alpha = Unmagic::Color::Alpha.new(75)
+        alpha = Unmagic::Color::Alpha.new(value: 75)
         rgb = new(red: 255, green: 0, blue: 0, alpha: alpha)
         expect(rgb.alpha.value).to(eq(75.0))
       end
     end
 
     describe "parsing with alpha" do
-      context "modern format with slash separator" do
+      context "with modern format slash separator" do
         it "parses rgb(R G B / alpha) format" do
           rgb = parse("rgb(255 128 0 / 0.5)")
           expect(rgb.red.value).to(eq(255))
@@ -625,7 +625,7 @@ RSpec.describe(Unmagic::Color::RGB) do
         end
       end
 
-      context "legacy rgba format" do
+      context "with legacy rgba format" do
         it "parses rgba(R, G, B, alpha) format" do
           rgb = parse("rgba(255, 128, 0, 0.5)")
           expect(rgb.red.value).to(eq(255))
@@ -645,7 +645,7 @@ RSpec.describe(Unmagic::Color::RGB) do
         end
       end
 
-      context "hex format with alpha" do
+      context "with hex format alpha" do
         it "parses 8-digit hex (#RRGGBBAA)" do
           rgb = parse("#ff880080")
           expect(rgb.red.value).to(eq(255))

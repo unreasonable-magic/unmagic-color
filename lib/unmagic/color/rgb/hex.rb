@@ -104,9 +104,9 @@ module Unmagic
               a = hex[6..7].to_i(16)
               # Convert 0-255 alpha to 0-100 percentage
               alpha_percent = (a / 255.0 * 100).round(2)
-              RGB.new(red: r, green: g, blue: b, alpha: alpha_percent)
+              RGB.build(red: r, green: g, blue: b, alpha: alpha_percent)
             else
-              RGB.new(red: r, green: g, blue: b)
+              RGB.build(red: r, green: g, blue: b)
             end
           end
         end
