@@ -52,11 +52,20 @@ class GradientHelper < IRB::HelperMethod::Base
   end
 end
 
+class PercentageHelper < IRB::HelperMethod::Base
+  description "Build a Percentage"
+
+  def execute(*args, **kwargs)
+    Unmagic::Util::Percentage.build(*args, **kwargs)
+  end
+end
+
 IRB::HelperMethod.register(:rgb, RGBHelper)
 IRB::HelperMethod.register(:hsl, HSLHelper)
 IRB::HelperMethod.register(:oklch, OKLCHHelper)
 IRB::HelperMethod.register(:parse, ParseHelper)
 IRB::HelperMethod.register(:gradient, GradientHelper)
+IRB::HelperMethod.register(:percentage, PercentageHelper)
 
 # Print welcome banner with syntax highlighting
 def colorize(text, color, mode: :truecolor)
@@ -144,6 +153,14 @@ puts highlight("color.to_css_oklch")
 puts ""
 puts comment("# Create gradients")
 puts highlight('gradient(:linear, ["#FF0000", "#0000FF"]).rasterize(width: 10).pixels[0].map(&:to_hex)')
+puts ""
+puts comment("# Helpers")
+puts highlight("rgb(255, 87, 51)")
+puts highlight("hsl(9, 100, 60)")
+puts highlight("oklch(0.65, 0.22, 30)")
+puts highlight('parse("#ff5733")')
+puts highlight('gradient(:linear, ["#FF0000", "#0000FF"])')
+puts highlight("percentage(50)")
 puts ""
 
 # Configure IRB with custom prompt
