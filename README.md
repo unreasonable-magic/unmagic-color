@@ -24,39 +24,6 @@ Or install it yourself as:
 gem install unmagic-color
 ```
 
-## Features
-
-- **Multiple Color Spaces**: RGB, HSL, and OKLCH support
-- **Flexible Parsing**: Parse colors from hex, CSS format strings, named colors, ANSI codes, or component values
-- **Named Colors**: Support for [X11 color names](https://en.wikipedia.org/wiki/X11_color_names) (red, blue, goldenrod, etc.)
-- **ANSI Terminal Colors**: Parse and generate ANSI escape codes for terminal output
-- **Color Conversions**: Seamlessly convert between color spaces
-- **Color Manipulation**: Lighten, darken, and blend colors
-- **Deterministic Generation**: Generate consistent colors from strings or seeds
-- **Luminance Calculation**: Determine if colors are light or dark
-- **Color Progressions**: Create color scales and palettes
-
-## Quick Start
-
-```ruby
-require 'unmagic/color'
-
-# Parse a color
-color = Unmagic::Color.parse("#FF5733")
-
-# Convert to different color spaces
-hsl = color.to_hsl
-oklch = color.to_oklch
-
-# Manipulate colors
-lighter = color.lighten(0.2)
-darker = color.darken(0.1)
-
-# Check luminance
-color.light?  # => false
-color.dark?   # => true
-```
-
 ## Usage Examples
 
 ### Parsing Colors
@@ -78,14 +45,27 @@ color = Unmagic::Color::HSL.new(hue: 9, saturation: 100, lightness: 60)
 color = Unmagic::Color.parse("oklch(0.65 0.15 30)")
 color = Unmagic::Color::OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 30)
 
-# From X11 named colors (https://en.wikipedia.org/wiki/X11_color_names)
+# From named colors (X11 is the default and CSS/W3C databases)
 color = Unmagic::Color.parse("goldenrod")
 color = Unmagic::Color["red"]
+
+# Pass db name as prefix for specific lookup:
+color = Unmagic::Color.parse("css:red")
+color = Unmagic::Color.parse("w3c:gray") # w3c is alias for css
+color = Unmagic::Color.parse("x11:red")
 
 # Named colors are case-insensitive and whitespace-tolerant
 color = Unmagic::Color.parse("Golden Rod")  # Same as "goldenrod"
 color = Unmagic::Color.parse("DARK SLATE BLUE")  # Same as "darkslateblue"
+```
 
+**Named Color Databases:**
+- **X11**: 658 colors, ~54 KB in memory (lazy-loaded)
+- **CSS/W3C**: 148 colors, ~13 KB in memory (lazy-loaded)
+
+Databases are only loaded into memory when first accessed, with sub-millisecond load times.
+
+```ruby
 # From ANSI escape codes
 color = Unmagic::Color.parse("31")              # Red (standard ANSI)
 color = Unmagic::Color.parse("38;5;196")        # Red (256-color palette)
@@ -109,11 +89,15 @@ puts "\x1b[#{red.to_ansi}mRed text\x1b[0m"
 blue = Unmagic::Color.parse("#0000ff")
 puts "\x1b[#{blue.to_ansi(layer: :background)}mBlue background\x1b[0m"
 
-# Named ANSI colors use standard codes
-Unmagic::Color.parse("red").to_ansi      # => "31"
-Unmagic::Color.parse("green").to_ansi    # => "32"
+# Default mode is 24-bit true color
+Unmagic::Color.parse("red").to_ansi      # => "38;2;255;0;0"
+Unmagic::Color.parse("css:green").to_ansi    # => "38;2;0;128;0"
 
-# Custom colors use 24-bit true color
+# Named colors can use standard codes with palette16 mode
+Unmagic::Color.parse("red").to_ansi(mode: :palette16)    # => "91"
+Unmagic::Color.parse("green").to_ansi(mode: :palette16)  # => "92"
+
+# Custom colors also use 24-bit true color by default
 Unmagic::Color.parse("#6496c8").to_ansi  # => "38;2;100;150;200"
 
 # Parse ANSI codes back to colors
@@ -133,7 +117,7 @@ rgb = Unmagic::Color.parse("#FF5733")
 
 # Convert to HSL
 hsl = rgb.to_hsl
-puts hsl.hue.to_f        # => 9.0
+puts hsl.hue.to_f        # => 11.0
 puts hsl.saturation.to_f # => 100.0
 puts hsl.lightness.to_f  # => 60.0
 
@@ -142,7 +126,7 @@ oklch = rgb.to_oklch
 
 # Convert back to hex
 hex = hsl.to_rgb.to_hex
-puts hex  # => "#FF5733"
+puts hex  # => "#ff5833"
 ```
 
 ### Color Manipulation
@@ -272,6 +256,81 @@ color.dark?   # => true
 # Choose contrasting text color
 text_color = color.light? ? "#000000" : "#FFFFFF"
 ```
+
+### Gradients
+
+Create smooth color transitions with gradients in RGB, HSL, or OKLCH color spaces:
+
+```ruby
+# Simple gradient - auto-detects color space
+gradient = Unmagic::Color::Gradient.linear(["#FF0000", "#0000FF"])
+bitmap = gradient.rasterize(width: 10)
+
+# Access the colors
+colors = bitmap.pixels[0]  # Array of 10 colors from red to blue
+colors.map(&:to_hex)
+# => ["#ff0000", "#e60019", "#cc0033", ..., "#0000ff"]
+
+# Create gradients with multiple stops
+gradient = Unmagic::Color::Gradient.linear([
+  "#FF0000",  # Red at start (0%)
+  "#00FF00",  # Green at middle (50%)
+  "#0000FF"   # Blue at end (100%)
+])
+bitmap = gradient.rasterize(width: 20)
+
+# Use explicit positions (like CSS linear-gradient)
+gradient = Unmagic::Color::Gradient.linear([
+  ["#FF0000", 0.0],   # Red at start
+  ["#FFFF00", 0.3],   # Yellow at 30%
+  "#00FF00",          # Green auto-balances at 65%
+  ["#0000FF", 1.0]    # Blue at end
+])
+
+# Specify gradient direction
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "to right"
+)
+
+# Use angle directions
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "45deg"  # or just 45
+)
+
+# 2D gradients with width and height
+gradient = Unmagic::Color::Gradient.linear(
+  ["#FF0000", "#0000FF"],
+  direction: "to bottom right"
+)
+bitmap = gradient.rasterize(width: 100, height: 100)
+
+# Access individual pixels
+color = bitmap.at(50, 50)  # Get color at x=50, y=50
+
+# Choose color space for different effects
+# RGB gradients - direct color component interpolation
+rgb_gradient = Unmagic::Color::RGB::Gradient::Linear.build(["#FF0000", "#0000FF"])
+
+# HSL gradients - smoother transitions through the color wheel
+hsl_gradient = Unmagic::Color::HSL::Gradient::Linear.build([
+  "hsl(0, 100%, 50%)",    # Red
+  "hsl(240, 100%, 50%)"   # Blue
+])
+
+# OKLCH gradients - perceptually uniform transitions
+oklch_gradient = Unmagic::Color::OKLCH::Gradient::Linear.build([
+  "oklch(0.5 0.15 30)",   # Orange
+  "oklch(0.7 0.15 240)"   # Blue
+])
+```
+
+**Supported direction formats:**
+- Keywords: `"to top"`, `"to right"`, `"to bottom left"`, etc.
+- From/to: `"from left to right"`, `"from bottom to top"`
+- Angles: `"45deg"`, `"90deg"`, or numeric values like `45`, `90`
+- Direction objects: `Unmagic::Color::Units::Degrees::Direction::LEFT_TO_RIGHT`
 
 ## Color Spaces
 
