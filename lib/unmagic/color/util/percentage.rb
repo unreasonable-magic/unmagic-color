@@ -68,6 +68,9 @@ module Unmagic
             return if input.nil?
             return input if input.is_a?(self)
 
+            # Handle strings by parsing
+            return parse(input) if input.is_a?(::String)
+
             # Handle Rational
             if input.is_a?(Rational)
               return new(value: input.to_f * 100)
@@ -257,19 +260,11 @@ module Unmagic
     #
     # Handles both string parsing and numeric building.
     #
-    # @param args [Array] Arguments to pass to Percentage.build or Percentage.parse
+    # @param args [Array] Arguments to pass to Percentage.build
     # @option kwargs [Numeric] :value The percentage value (0-100)
     # @return [Percentage, nil] The created percentage
     def Percentage(*args, **kwargs) # rubocop:disable Naming/MethodName
-      return Percentage.build(**kwargs) if kwargs.any?
-      return Percentage.build(*args) if args.length != 1
-
-      input = args[0]
-      if input.is_a?(::String)
-        Percentage.parse(input)
-      else
-        Percentage.build(input)
-      end
+      Percentage.build(*args, **kwargs)
     end
     module_function :Percentage
   end
