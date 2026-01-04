@@ -42,3 +42,15 @@ jobs:
           bundler-cache: true
       - name: Run YARD Lint
         run: bundle exec yard-lint
+
+  yard_doctest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - name: Run YARD Doctest
+        run: bundle exec rake yard:doctest
