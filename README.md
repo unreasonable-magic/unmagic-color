@@ -57,7 +57,15 @@ color = Unmagic::Color.parse("x11:red")
 # Named colors are case-insensitive and whitespace-tolerant
 color = Unmagic::Color.parse("Golden Rod")  # Same as "goldenrod"
 color = Unmagic::Color.parse("DARK SLATE BLUE")  # Same as "darkslateblue"
+```
 
+**Named Color Databases:**
+- **X11**: 658 colors, ~54 KB in memory (lazy-loaded)
+- **CSS/W3C**: 148 colors, ~13 KB in memory (lazy-loaded)
+
+Databases are only loaded into memory when first accessed, with sub-millisecond load times.
+
+```ruby
 # From ANSI escape codes
 color = Unmagic::Color.parse("31")              # Red (standard ANSI)
 color = Unmagic::Color.parse("38;5;196")        # Red (256-color palette)
