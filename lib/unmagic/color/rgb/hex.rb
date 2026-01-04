@@ -57,8 +57,9 @@ module Unmagic
 
           # Parse a hexadecimal color string.
           #
-          # Accepts both full (6-digit) and short (3-digit) hex formats,
-          # with or without the # prefix.
+          # Accepts full (6-digit) and short (3-digit) hex formats,
+          # with or without the # prefix. Also supports 8-digit (with alpha)
+          # and 4-digit short format with alpha.
           #
           # @param input [String] The hex color string to parse
           # @return [RGB] The parsed RGB color
@@ -69,15 +70,18 @@ module Unmagic
           #
           # @example Short format without hash
           #   Unmagic::Color::RGB::Hex.parse("F80")
+          #
+          # @example With alpha
+          #   Unmagic::Color::RGB::Hex.parse("#FF880080")
           def parse(input)
             raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
             # Clean up the input
             hex = input.strip.gsub(/^#/, "")
 
-            # Check for valid length (3 or 6 characters)
-            unless hex.length == 3 || hex.length == 6
-              raise ParseError, "Invalid number of characters (got #{hex.length}, expected 3 or 6)"
+            # Check for valid length (3, 4, 6, or 8 characters)
+            unless [3, 4, 6, 8].include?(hex.length)
+              raise ParseError, "Invalid number of characters (got #{hex.length}, expected 3, 4, 6, or 8)"
             end
 
             # Check if all characters are valid hex digits
@@ -86,8 +90,8 @@ module Unmagic
               raise ParseError, "Invalid hex characters: #{invalid_chars.join(", ")}"
             end
 
-            # Handle 3-character hex codes
-            if hex.length == 3
+            # Handle 3 or 4-character hex codes (expand each digit)
+            if hex.length == 3 || hex.length == 4
               hex = hex.chars.map { |c| c * 2 }.join
             end
 
@@ -95,7 +99,15 @@ module Unmagic
             g = hex[2..3].to_i(16)
             b = hex[4..5].to_i(16)
 
-            RGB.new(red: r, green: g, blue: b)
+            # Parse alpha if present (8 characters total after expansion)
+            if hex.length == 8
+              a = hex[6..7].to_i(16)
+              # Convert 0-255 alpha to 0-100 percentage
+              alpha_percent = (a / 255.0 * 100).round(2)
+              RGB.build(red: r, green: g, blue: b, alpha: alpha_percent)
+            else
+              RGB.build(red: r, green: g, blue: b)
+            end
           end
         end
       end

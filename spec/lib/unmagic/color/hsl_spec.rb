@@ -431,6 +431,108 @@ RSpec.describe(Unmagic::Color::HSL) do
     end
   end
 
+  describe "alpha channel support" do
+    describe "initialization" do
+      it "defaults alpha to 100 (fully opaque)" do
+        hsl = new(hue: 0, saturation: 100, lightness: 50)
+        expect(hsl.alpha.value).to(eq(100.0))
+      end
+
+      it "accepts explicit alpha value" do
+        hsl = new(hue: 0, saturation: 100, lightness: 50, alpha: 50)
+        expect(hsl.alpha.value).to(eq(50.0))
+      end
+    end
+
+    describe "parsing with alpha" do
+      context "with modern format slash separator" do
+        it "parses hsl(H S% L% / alpha) format" do
+          hsl = parse("hsl(240 50% 75% / 0.5)")
+          expect(hsl.hue.value).to(eq(240))
+          expect(hsl.saturation.value).to(eq(50.0))
+          expect(hsl.lightness.value).to(eq(75.0))
+          expect(hsl.alpha.value).to(eq(50.0))
+        end
+
+        it "parses hsl(H S% L% / percentage) format" do
+          hsl = parse("hsl(240 50% 75% / 50%)")
+          expect(hsl.alpha.value).to(eq(50.0))
+        end
+      end
+
+      context "with legacy hsla format" do
+        it "parses hsla(H, S%, L%, alpha) format" do
+          hsl = parse("hsla(240, 50%, 75%, 0.5)")
+          expect(hsl.hue.value).to(eq(240))
+          expect(hsl.saturation.value).to(eq(50.0))
+          expect(hsl.lightness.value).to(eq(75.0))
+          expect(hsl.alpha.value).to(eq(50.0))
+        end
+
+        it "parses comma-separated with alpha" do
+          hsl = parse("240, 50%, 75%, 0.75")
+          expect(hsl.alpha.value).to(eq(75.0))
+        end
+      end
+    end
+
+    describe "output with alpha" do
+      describe "#to_s" do
+        it "includes alpha when alpha < 100" do
+          hsl = new(hue: 240, saturation: 50, lightness: 75, alpha: 50)
+          expect(hsl.to_s).to(include("/ 0.5"))
+        end
+
+        it "omits alpha when alpha = 100" do
+          hsl = new(hue: 240, saturation: 50, lightness: 75, alpha: 100)
+          expect(hsl.to_s).not_to(include("/"))
+        end
+
+        it "omits alpha when alpha is default" do
+          hsl = new(hue: 240, saturation: 50, lightness: 75)
+          expect(hsl.to_s).not_to(include("/"))
+        end
+      end
+    end
+
+    describe "blending with alpha" do
+      it "interpolates alpha values" do
+        hsl1 = new(hue: 0, saturation: 100, lightness: 50, alpha: 100)
+        hsl2 = new(hue: 240, saturation: 100, lightness: 50, alpha: 0)
+        blended = hsl1.blend(hsl2, 0.5)
+        expect(blended.alpha.value).to(eq(50.0))
+      end
+
+      it "blends colors with different alpha" do
+        hsl1 = new(hue: 0, saturation: 100, lightness: 50, alpha: 80)
+        hsl2 = new(hue: 120, saturation: 100, lightness: 50, alpha: 20)
+        blended = hsl1.blend(hsl2, 0.25)
+        expect(blended.alpha.value).to(eq(65.0))
+      end
+    end
+
+    describe "conversions preserve alpha" do
+      it "preserves alpha when converting to RGB" do
+        hsl = new(hue: 0, saturation: 100, lightness: 50, alpha: 50)
+        rgb = hsl.to_rgb
+        expect(rgb.alpha.value).to(eq(50.0))
+      end
+
+      it "preserves alpha when converting to OKLCH" do
+        hsl = new(hue: 0, saturation: 100, lightness: 50, alpha: 75)
+        oklch = hsl.to_oklch
+        expect(oklch.alpha.value).to(eq(75.0))
+      end
+
+      it "preserves alpha through HSL→RGB→HSL conversion" do
+        hsl1 = new(hue: 240, saturation: 80, lightness: 60, alpha: 60)
+        rgb = hsl1.to_rgb
+        hsl2 = rgb.to_hsl
+        expect(hsl2.alpha.value).to(eq(60.0))
+      end
+    end
+  end
+
   describe "#pretty_print" do
     it "outputs standard Ruby format with colored swatch in class name" do
       hsl = new(hue: 240, saturation: 80, lightness: 50)

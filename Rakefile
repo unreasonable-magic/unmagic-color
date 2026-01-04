@@ -22,4 +22,17 @@ rescue LoadError
   # yard-doctest not available
 end
 
+desc("Run all CI checks (rubocop, spec, yard-lint, yard:doctest)")
+task ci: ["rubocop", "spec", "yard_lint", "yard:doctest"]
+
+desc("Run RuboCop")
+task :rubocop do
+  sh("bundle exec rubocop")
+end
+
+desc("Run YARD Lint")
+task :yard_lint do
+  sh("bundle exec yard-lint")
+end
+
 task default: :spec

@@ -77,24 +77,29 @@ module Unmagic
       # Error raised when parsing OKLCH color strings fails
       class ParseError < Color::Error; end
 
-      attr_reader :chroma, :hue
+      attr_reader :chroma, :hue, :alpha
 
       # Create a new OKLCH color.
       #
       # @param lightness [Float] Lightness as a ratio (0.0-1.0), clamped to range
       # @param chroma [Float] Chroma intensity (0.0-0.5), clamped to range
       # @param hue [Numeric] Hue in degrees (0-360), wraps around if outside range
+      # @param alpha [Numeric, Color::Alpha, nil] Alpha channel (0-100%), defaults to 100 (fully opaque)
       #
       # @example Create a medium blue
       #   OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240)
       #
+      # @example Create a semi-transparent red
+      #   OKLCH.new(lightness: 0.60, chroma: 0.25, hue: 30, alpha: 50)
+      #
       # @example Create a vibrant red
       #   OKLCH.new(lightness: 0.60, chroma: 0.25, hue: 30)
-      def initialize(lightness:, chroma:, hue:)
+      def initialize(lightness:, chroma:, hue:, alpha: nil)
         super()
-        @lightness = Color::Lightness.new(lightness * 100) # Convert 0-1 to percentage
+        @lightness = Color::Lightness.new(value: lightness * 100) # Convert 0-1 to percentage
         @chroma = Color::Chroma.new(value: chroma)
         @hue = Color::Hue.new(value: hue)
+        @alpha = Color::Alpha.build(alpha) || Color::Alpha::DEFAULT
       end
 
       # Get the lightness as a ratio (0.0-1.0).
@@ -116,9 +121,9 @@ module Unmagic
         # Parse an OKLCH color from a string.
         #
         # Accepts formats:
-        # - CSS format: "oklch(0.65 0.15 240)"
+        # - CSS format: "oklch(0.65 0.15 240)" or "oklch(0.65 0.15 240 / 0.5)"
         # - Raw values: "0.65 0.15 240"
-        # - Space-separated values
+        # - Space-separated values with optional alpha after slash
         #
         # @param input [String] The OKLCH color string to parse
         # @return [OKLCH] The parsed OKLCH color
@@ -127,6 +132,9 @@ module Unmagic
         # @example Parse CSS format
         #   OKLCH.parse("oklch(0.65 0.15 240)")
         #
+        # @example Parse with alpha
+        #   OKLCH.parse("oklch(0.65 0.15 240 / 0.5)")
+        #
         # @example Parse without function wrapper
         #   OKLCH.parse("0.58 0.12 180")
         def parse(input)
@@ -134,6 +142,16 @@ module Unmagic
 
           # Remove oklch() wrapper if present
           clean = input.gsub(/^oklch\s*\(\s*|\s*\)$/, "").strip
+
+          # Check for alpha with slash separator
+          alpha = nil
+          if clean.include?("/")
+            parts = clean.split("/").map(&:strip)
+            raise ParseError, "Invalid format with /: expected 'L C H / alpha'" unless parts.length == 2
+
+            clean = parts[0]
+            alpha = Color::Alpha.parse(parts[1])
+          end
 
           # Split values
           parts = clean.split(/\s+/)
@@ -167,7 +185,7 @@ module Unmagic
             raise ParseError, "Hue must be between 0 and 360, got #{h}"
           end
 
-          new(lightness: l, chroma: c, hue: h)
+          new(lightness: l, chroma: c, hue: h, alpha: alpha)
         end
 
         # Build an OKLCH color from a string, positional values, or keyword arguments.
@@ -272,7 +290,7 @@ module Unmagic
         g = (base + g_offset).clamp(0, 255)
         b = (base + b_offset).clamp(0, 255)
 
-        Unmagic::Color::RGB.new(red: r, green: g, blue: b)
+        Unmagic::Color::RGB.new(red: r, green: g, blue: b, alpha: @alpha)
       end
 
       # Calculate the relative luminance.
@@ -300,7 +318,7 @@ module Unmagic
       def lighten(amount = 0.03)
         current_lightness = @lightness.to_ratio
         new_lightness = clamp01(current_lightness + amount)
-        self.class.new(lightness: new_lightness, chroma: @chroma.value, hue: @hue.value)
+        self.class.new(lightness: new_lightness, chroma: @chroma.value, hue: @hue.value, alpha: @alpha.value)
       end
 
       # Create a darker version by decreasing lightness.
@@ -379,19 +397,33 @@ module Unmagic
         new_lightness = lightness + (other_oklch.lightness - lightness) * amount
         new_chroma = @chroma.value + (other_oklch.chroma.value - @chroma.value) * amount
 
-        self.class.new(lightness: new_lightness, chroma: new_chroma, hue: new_hue)
+        self.class.new(
+          lightness: new_lightness,
+          chroma: new_chroma,
+          hue: new_hue,
+          alpha: @alpha.value * (1 - amount) + other_oklch.alpha.value * amount,
+        )
       end
 
       # Convert to CSS oklch() function format.
       #
-      # @return [String] CSS string like "oklch(0.6500 0.1500 240.00)"
+      # @return [String] CSS string like "oklch(0.6500 0.1500 240.00)" or "oklch(0.6500 0.1500 240.00 / 0.5)"
       #
-      # @example
+      # @example Fully opaque
       #   color = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240)
       #   color.to_css_oklch
       #   # => "oklch(0.6500 0.1500 240.00)"
+      #
+      # @example Semi-transparent
+      #   color = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 50)
+      #   color.to_css_oklch
+      #   # => "oklch(0.6500 0.1500 240.00 / 0.5)"
       def to_css_oklch
-        format("oklch(%.4f %.4f %.2f)", @lightness.to_ratio, @chroma.value, @hue.value)
+        if @alpha.value < 100
+          format("oklch(%.4f %.4f %.2f / %s)", @lightness.to_ratio, @chroma.value, @hue.value, @alpha.to_css)
+        else
+          format("oklch(%.4f %.4f %.2f)", @lightness.to_ratio, @chroma.value, @hue.value)
+        end
       end
 
       # Convert to CSS custom properties (variables).

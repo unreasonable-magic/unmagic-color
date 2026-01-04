@@ -23,7 +23,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
   describe ".parse" do
     it "raises ParseError for invalid RGB values" do
-      expect { parse("rgb(255)") }.to(raise_error(Unmagic::Color::RGB::ParseError, "Expected 3 RGB values, got 1"))
+      expect { parse("rgb(255)") }.to(raise_error(Unmagic::Color::RGB::ParseError, "Expected 3 or 4 RGB values, got 1"))
       expect { parse("rgb(255, abc, 0)") }.to(raise_error(Unmagic::Color::RGB::ParseError, 'Invalid green value: "abc" (must be a number)'))
       expect { parse("rgb(255, 128, def)") }.to(raise_error(Unmagic::Color::RGB::ParseError, 'Invalid blue value: "def" (must be a number)'))
     end
@@ -34,7 +34,7 @@ RSpec.describe(Unmagic::Color::RGB) do
     end
 
     it "lets hex parsing errors bubble up" do
-      expect { parse("#FFFF") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError, /Invalid number of characters/))
+      expect { parse("#FFFFF") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError, /Invalid number of characters/))
     end
 
     it "parses RGB with parentheses" do
@@ -131,8 +131,7 @@ RSpec.describe(Unmagic::Color::RGB) do
       expect { parse("rgb(red, green, blue)") }.to(raise_error(Unmagic::Color::RGB::ParseError))
       expect { parse("255 128 0") }.to(raise_error(Unmagic::Color::RGB::ParseError))
       expect { parse("#GGGGGG") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError))
-      expect { parse("#FF00") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError))
-      expect { parse("FFFFF") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError)) # 5 chars
+      expect { parse("FFFFF") }.to(raise_error(Unmagic::Color::RGB::Hex::ParseError)) # 5 chars - invalid
       expect { parse("") }.to(raise_error(Unmagic::Color::RGB::ParseError))
       expect { parse(nil) }.to(raise_error(Unmagic::Color::RGB::ParseError))
       expect { parse(123) }.to(raise_error(Unmagic::Color::RGB::ParseError))
@@ -587,6 +586,160 @@ RSpec.describe(Unmagic::Color::RGB) do
 
       it "raises error for wrong number of arguments" do
         expect { build(1, 2) }.to(raise_error(ArgumentError, "Expected 1 or 3 arguments, got 2"))
+      end
+    end
+  end
+
+  describe "alpha channel support" do
+    describe "initialization" do
+      it "defaults alpha to 100 (fully opaque)" do
+        rgb = new(red: 255, green: 0, blue: 0)
+        expect(rgb.alpha.value).to(eq(100.0))
+      end
+
+      it "accepts explicit alpha value" do
+        rgb = new(red: 255, green: 0, blue: 0, alpha: 50)
+        expect(rgb.alpha.value).to(eq(50.0))
+      end
+
+      it "accepts Alpha instance" do
+        alpha = Unmagic::Color::Alpha.new(value: 75)
+        rgb = new(red: 255, green: 0, blue: 0, alpha: alpha)
+        expect(rgb.alpha.value).to(eq(75.0))
+      end
+    end
+
+    describe "parsing with alpha" do
+      context "with modern format slash separator" do
+        it "parses rgb(R G B / alpha) format" do
+          rgb = parse("rgb(255 128 0 / 0.5)")
+          expect(rgb.red.value).to(eq(255))
+          expect(rgb.green.value).to(eq(128))
+          expect(rgb.blue.value).to(eq(0))
+          expect(rgb.alpha.value).to(eq(50.0))
+        end
+
+        it "parses rgb(R G B / percentage) format" do
+          rgb = parse("rgb(255 128 0 / 50%)")
+          expect(rgb.alpha.value).to(eq(50.0))
+        end
+      end
+
+      context "with legacy rgba format" do
+        it "parses rgba(R, G, B, alpha) format" do
+          rgb = parse("rgba(255, 128, 0, 0.5)")
+          expect(rgb.red.value).to(eq(255))
+          expect(rgb.green.value).to(eq(128))
+          expect(rgb.blue.value).to(eq(0))
+          expect(rgb.alpha.value).to(eq(50.0))
+        end
+
+        it "parses rgb(R, G, B, alpha) format" do
+          rgb = parse("rgb(255, 128, 0, 0.75)")
+          expect(rgb.alpha.value).to(eq(75.0))
+        end
+
+        it "parses rgba with percentage alpha" do
+          rgb = parse("rgba(255, 128, 0, 50%)")
+          expect(rgb.alpha.value).to(eq(50.0))
+        end
+      end
+
+      context "with hex format alpha" do
+        it "parses 8-digit hex (#RRGGBBAA)" do
+          rgb = parse("#ff880080")
+          expect(rgb.red.value).to(eq(255))
+          expect(rgb.green.value).to(eq(136))
+          expect(rgb.blue.value).to(eq(0))
+          expect(rgb.alpha.value).to(be_within(0.5).of(50.2))
+        end
+
+        it "parses 4-digit hex (#RGBA)" do
+          rgb = parse("#f808")
+          expect(rgb.red.value).to(eq(255))
+          expect(rgb.green.value).to(eq(136))
+          expect(rgb.blue.value).to(eq(0))
+          expect(rgb.alpha.value).to(be_within(0.5).of(53.3))
+        end
+      end
+    end
+
+    describe "output with alpha" do
+      describe "#to_hex" do
+        it "includes 8-digit hex when alpha < 100" do
+          rgb = new(red: 255, green: 136, blue: 0, alpha: 50)
+          hex = rgb.to_hex
+          expect(hex).to(match(/^#[0-9a-f]{8}$/))
+          expect(hex).to(start_with("#ff8800"))
+        end
+
+        it "outputs 6-digit hex when alpha = 100" do
+          rgb = new(red: 255, green: 136, blue: 0, alpha: 100)
+          expect(rgb.to_hex).to(eq("#ff8800"))
+        end
+
+        it "outputs 6-digit hex when alpha is default" do
+          rgb = new(red: 255, green: 136, blue: 0)
+          expect(rgb.to_hex).to(eq("#ff8800"))
+        end
+      end
+
+      describe "#to_s" do
+        it "returns hex format with alpha" do
+          rgb = new(red: 255, green: 0, blue: 0, alpha: 50)
+          expect(rgb.to_s).to(eq(rgb.to_hex))
+        end
+      end
+    end
+
+    describe "blending with alpha" do
+      it "interpolates alpha values" do
+        rgb1 = new(red: 255, green: 0, blue: 0, alpha: 100)
+        rgb2 = new(red: 0, green: 0, blue: 255, alpha: 0)
+        blended = rgb1.blend(rgb2, 0.5)
+        expect(blended.alpha.value).to(eq(50.0))
+      end
+
+      it "blends colors with same alpha" do
+        rgb1 = new(red: 255, green: 0, blue: 0, alpha: 75)
+        rgb2 = new(red: 0, green: 0, blue: 255, alpha: 75)
+        blended = rgb1.blend(rgb2, 0.5)
+        expect(blended.alpha.value).to(eq(75.0))
+      end
+
+      it "blends colors with different alpha values" do
+        rgb1 = new(red: 255, green: 0, blue: 0, alpha: 80)
+        rgb2 = new(red: 0, green: 0, blue: 255, alpha: 20)
+        blended = rgb1.blend(rgb2, 0.25)
+        expect(blended.alpha.value).to(eq(65.0))
+      end
+    end
+
+    describe "conversions preserve alpha" do
+      it "preserves alpha when converting to HSL" do
+        rgb = new(red: 255, green: 0, blue: 0, alpha: 50)
+        hsl = rgb.to_hsl
+        expect(hsl.alpha.value).to(eq(50.0))
+      end
+
+      it "preserves alpha when converting to OKLCH" do
+        rgb = new(red: 255, green: 0, blue: 0, alpha: 75)
+        oklch = rgb.to_oklch
+        expect(oklch.alpha.value).to(eq(75.0))
+      end
+
+      it "preserves alpha through RGB→HSL→RGB conversion" do
+        rgb1 = new(red: 255, green: 128, blue: 64, alpha: 60)
+        hsl = rgb1.to_hsl
+        rgb2 = hsl.to_rgb
+        expect(rgb2.alpha.value).to(eq(60.0))
+      end
+
+      it "preserves alpha through RGB→OKLCH→RGB conversion" do
+        rgb1 = new(red: 255, green: 128, blue: 64, alpha: 40)
+        oklch = rgb1.to_oklch
+        rgb2 = oklch.to_rgb
+        expect(rgb2.alpha.value).to(eq(40.0))
       end
     end
   end

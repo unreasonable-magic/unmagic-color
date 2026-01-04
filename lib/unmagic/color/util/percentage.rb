@@ -7,19 +7,19 @@ module Unmagic
     # Handles both direct percentage values and ratio calculations.
     #
     # @example Direct percentage value
-    #   percentage = Percentage.new(75.5)
+    #   percentage = Percentage.build(75.5)
     #   percentage.to_s
     #   #=> "75.5%"
     #   percentage.value
     #   #=> 75.5
     #
     # @example Calculated from ratio
-    #   percentage = Percentage.new(50, 100)
+    #   percentage = Percentage.build(50, 100)
     #   percentage.to_s
     #   #=> "50.0%"
     #
     # @example Progress tracking
-    #   percentage = Percentage.new(current_item, total_items)
+    #   percentage = Percentage.build(current_item, total_items)
     #   percentage.to_s
     #   #=> "25.0%"
     class Percentage
@@ -29,24 +29,130 @@ module Unmagic
 
       # Create a new percentage
       #
-      # @param args [Array<Numeric>] Either a single percentage value (0-100) or numerator and denominator
-      def initialize(*args)
-        case args.length
-        when 1
-          @value = args[0].to_f
-        when 2
-          numerator, denominator = args
-          @value = if denominator.to_f.zero?
-            0.0
+      # @param value [Numeric] The percentage value (0-100)
+      def initialize(value:)
+        @value = value.to_f.clamp(0.0, 100.0)
+      end
+
+      class << self
+        # Build a percentage from various input types.
+        #
+        # Handles both single value and numerator/denominator ratio inputs.
+        #
+        # @param args [Array<Numeric>] Either a single percentage value (0-100) or numerator and denominator
+        # @option kwargs [Numeric] :value The percentage value (0-100)
+        # @return [Percentage, nil] The created percentage or nil if passed nil
+        #
+        # @example Single value
+        #   Percentage.build(75.5)
+        #   #=> Percentage with value 75.5
+        #
+        # @example Ratio
+        #   Percentage.build(50, 100)
+        #   #=> Percentage with value 50.0
+        #
+        # @example Keyword argument
+        #   Percentage.build(value: 75.5)
+        #   #=> Percentage with value 75.5
+        #
+        # @example Pass through existing instance
+        #   existing = Percentage.new(value: 50)
+        #   Percentage.build(existing)
+        #   #=> Returns the same instance
+        def build(*args, **kwargs)
+          return new(**kwargs) if kwargs.any?
+
+          case args.length
+          when 1
+            input = args[0]
+            return if input.nil?
+            return input if input.is_a?(self)
+
+            # Handle strings by parsing
+            return parse(input) if input.is_a?(::String)
+
+            # Handle Rational
+            if input.is_a?(Rational)
+              return new(value: input.to_f * 100)
+            end
+
+            # Handle numeric values
+            # If value is <= 1.0, treat as ratio (multiply by 100)
+            # If value is > 1.0, treat as literal percentage value
+            value = input.to_f
+            if value <= 1.0
+              new(value: value * 100)
+            else
+              new(value: value)
+            end
+          when 2
+            numerator, denominator = args
+            value = if denominator.to_f.zero?
+              0.0
+            else
+              (numerator.to_f / denominator.to_f * 100.0)
+            end
+            new(value: value)
           else
-            (numerator.to_f / denominator.to_f * 100.0)
+            raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1..2)"
           end
-        else
-          raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1..2)"
         end
 
-        # Clamp to valid percentage range
-        @value = @value.clamp(0.0, 100.0)
+        # Parse a percentage from string format.
+        #
+        # Handles multiple formats:
+        # - Explicit percentage: "50%" → 50.0
+        # - Fraction notation: "10/100" → 10.0
+        # - Bare decimal ≤ 1.0: "0.5" → 50.0 (treated as ratio)
+        # - Bare decimal > 1.0: "75" → 75.0 (treated as literal percentage)
+        #
+        # @param input [String] The string to parse
+        # @return [Percentage] The parsed percentage
+        # @raise [ArgumentError] If input is not a string or format is invalid
+        #
+        # @example Parse explicit percentage
+        #   Percentage.parse("23.5%")
+        #   #=> Percentage with value 23.5
+        #
+        # @example Parse ratio
+        #   Percentage.parse("0.5")
+        #   #=> Percentage with value 50.0
+        #
+        # @example Parse fraction
+        #   Percentage.parse("1/4")
+        #   #=> Percentage with value 25.0
+        def parse(input)
+          raise ArgumentError, "Input must be a string" unless input.is_a?(::String)
+
+          input = input.strip
+
+          # Handle explicit percentage format
+          if input.end_with?("%")
+            value = input.chomp("%").to_f
+            return new(value: value)
+          end
+
+          # Handle fraction notation
+          if input.include?("/")
+            parts = input.split("/").map(&:strip)
+            raise ArgumentError, "Invalid fraction format" unless parts.length == 2
+
+            numerator = parts[0].to_f
+            denominator = parts[1].to_f
+            return build(numerator, denominator)
+          end
+
+          # Handle bare numeric values
+          value = input.to_f
+
+          # If value is <= 1.0, treat as ratio (multiply by 100)
+          # If value is > 1.0, treat as literal percentage value
+          if value <= 1.0
+            new(value: value * 100)
+          else
+            new(value: value)
+          end
+        end
       end
 
       # Format as percentage string with configurable decimal places
@@ -102,9 +208,9 @@ module Unmagic
       def +(other)
         case other
         when Percentage
-          Percentage.new([value + other.value, 100.0].min)
+          Percentage.new(value: [value + other.value, 100.0].min)
         when Numeric
-          Percentage.new([value + other.to_f, 100.0].min)
+          Percentage.new(value: [value + other.to_f, 100.0].min)
         else
           raise TypeError, "can't add #{other.class} to Percentage"
         end
@@ -117,9 +223,9 @@ module Unmagic
       def -(other)
         case other
         when Percentage
-          Percentage.new([value - other.value, 0.0].max)
+          Percentage.new(value: [value - other.value, 0.0].max)
         when Numeric
-          Percentage.new([value - other.to_f, 0.0].max)
+          Percentage.new(value: [value - other.to_f, 0.0].max)
         else
           raise TypeError, "can't subtract #{other.class} from Percentage"
         end
@@ -129,7 +235,7 @@ module Unmagic
       #
       # @return [Percentage] New percentage with absolute value
       def abs
-        self.class.new(@value.abs)
+        self.class.new(value: @value.abs)
       end
 
       # Check if percentage is zero
@@ -138,6 +244,28 @@ module Unmagic
       def zero?
         @value.zero?
       end
+
+      # Pretty print format for debugging
+      #
+      # @param pp [PP] The pretty printer
+      # @return [void]
+      def pretty_print(pp)
+        pp.group(1, "#<#{self.class}(", ")>") do
+          pp.text("\"#{self}\"")
+        end
+      end
     end
+
+    # Constructor-style method for creating Percentage instances
+    #
+    # Handles both string parsing and numeric building.
+    #
+    # @param args [Array] Arguments to pass to Percentage.build
+    # @option kwargs [Numeric] :value The percentage value (0-100)
+    # @return [Percentage, nil] The created percentage
+    def Percentage(*args, **kwargs) # rubocop:disable Naming/MethodName
+      Percentage.build(*args, **kwargs)
+    end
+    module_function :Percentage
   end
 end

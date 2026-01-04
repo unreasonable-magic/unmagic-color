@@ -296,6 +296,53 @@ module Unmagic
     # Lightness percentage (0-100%)
     class Lightness < Unmagic::Util::Percentage; end
 
+    # Alpha channel for transparency. Stored internally as percentage (0-100%)
+    # where 100% is fully opaque and 0% is fully transparent. Use to_css to
+    # output as ratio (0.0-1.0) for CSS formats.
+    #
+    # Inherits parse method from Percentage which handles:
+    # - Explicit percentage: "50%" → Alpha with value 50.0
+    # - Fraction notation: "1/2" → Alpha with value 50.0
+    # - Bare decimal ≤ 1.0: "0.5" → Alpha with value 50.0 (treated as CSS ratio)
+    # - Bare decimal > 1.0: "75" → Alpha with value 75.0
+    #
+    # @example Parse CSS ratio
+    #   alpha = Unmagic::Color::Alpha.parse("0.5")
+    #   alpha.value
+    #   #=> 50.0
+    #
+    # @example Parse percentage
+    #   alpha = Unmagic::Color::Alpha.parse("50%")
+    #   alpha.value
+    #   #=> 50.0
+    class Alpha < Unmagic::Util::Percentage
+      # Default alpha value (fully opaque)
+      DEFAULT = new(value: 100).freeze
+
+      # Convert to CSS output format (as ratio 0.0-1.0, not percentage).
+      #
+      # Returns "1" for fully opaque, "0" for fully transparent, and decimal
+      # values for semi-transparent colors (e.g., "0.5", "0.75").
+      #
+      # @return [String] The alpha value as a CSS ratio string
+      #
+      # @example Fully opaque
+      #   Unmagic::Color::Alpha.new(value: 100).to_css
+      #   #=> "1"
+      #
+      # @example Semi-transparent
+      #   Unmagic::Color::Alpha.new(value: 50).to_css
+      #   #=> "0.5"
+      #
+      # @example Fully transparent
+      #   Unmagic::Color::Alpha.new(value: 0).to_css
+      #   #=> "0"
+      def to_css
+        ratio = to_ratio
+        ratio == 1.0 ? "1" : ratio.to_s.sub(/\.?0+$/, "")
+      end
+    end
+
     # Convert this color to RGB color space.
     #
     # RGB represents colors as a combination of Red, Green, and Blue light,

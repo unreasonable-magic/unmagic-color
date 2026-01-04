@@ -62,24 +62,29 @@ module Unmagic
       # Error raised when parsing RGB color strings fails
       class ParseError < Color::Error; end
 
-      attr_reader :red, :green, :blue
+      attr_reader :red, :green, :blue, :alpha
 
       # Create a new RGB color.
       #
       # @param red [Integer] Red component (0-255), values outside this range are clamped
       # @param green [Integer] Green component (0-255), values outside this range are clamped
       # @param blue [Integer] Blue component (0-255), values outside this range are clamped
+      # @param alpha [Numeric, Color::Alpha, nil] Alpha channel (0-100%), defaults to 100 (fully opaque)
       #
       # @example Create a red color
       #   RGB.new(red: 255, green: 0, blue: 0)
       #
+      # @example Create a semi-transparent red
+      #   RGB.new(red: 255, green: 0, blue: 0, alpha: 50)
+      #
       # @example Values are automatically clamped
       #   RGB.new(red: 300, green: -10, blue: 128)
-      def initialize(red:, green:, blue:)
+      def initialize(red:, green:, blue:, alpha: nil)
         super()
         @red = Color::Red.new(value: red)
         @green = Color::Green.new(value: green)
         @blue = Color::Blue.new(value: blue)
+        @alpha = Color::Alpha.build(alpha) || Color::Alpha::DEFAULT
       end
 
       class << self
@@ -226,33 +231,64 @@ module Unmagic
           new(red: r, green: g, blue: b)
         end
 
-        # Parse RGB format like "rgb(255, 128, 0)" or "255, 128, 0"
+        # Parse RGB format like "rgb(255, 128, 0)" or "rgb(255 128 0 / 0.5)"
+        #
+        # Supports both legacy comma-separated format and modern space-separated
+        # format with optional alpha value.
         #
         # @param input [String] RGB string to parse
         # @return [RGB] Parsed RGB color
         # @raise [ParseError] If format is invalid
         def parse_rgb_format(input)
-          # Remove rgb() wrapper if present
-          clean = input.gsub(/^rgb\s*\(\s*|\s*\)$/, "").strip
+          # Remove rgb() or rgba() wrapper if present
+          clean = input.gsub(/^rgba?\s*\(\s*|\s*\)$/, "").strip
 
-          # Split values
-          values = clean.split(/\s*,\s*/)
-          unless values.length == 3
-            raise ParseError, "Expected 3 RGB values, got #{values.length}"
+          # Check for modern format with slash (space-separated with / for alpha)
+          # Example: "255 128 0 / 0.5" or "255 128 0 / 50%"
+          if clean.include?("/")
+            parts = clean.split("/").map(&:strip)
+            raise ParseError, "Invalid format with /: expected 'R G B / alpha'" unless parts.length == 2
+
+            rgb_values = parts[0].split(/\s+/)
+            alpha_str = parts[1]
+
+            unless rgb_values.length == 3
+              raise ParseError, "Expected 3 RGB values before /, got #{rgb_values.length}"
+            end
+
+            alpha = Color::Alpha.parse(alpha_str)
+            r, g, b = parse_rgb_values(rgb_values)
+
+            return new(red: r, green: g, blue: b, alpha: alpha)
           end
 
-          # Check if all values are numeric (allow negative for clamping)
-          values.each_with_index do |v, i|
+          # Legacy comma-separated format (with or without alpha)
+          # Example: "255, 128, 0" or "255, 128, 0, 0.5"
+          values = clean.split(/\s*,\s*/)
+
+          unless [3, 4].include?(values.length)
+            raise ParseError, "Expected 3 or 4 RGB values, got #{values.length}"
+          end
+
+          r, g, b = parse_rgb_values(values[0..2])
+          alpha = values.length == 4 ? Color::Alpha.parse(values[3]) : nil
+
+          new(red: r, green: g, blue: b, alpha: alpha)
+        end
+
+        # Parse RGB component values
+        #
+        # @param values [Array<String>] Array of 3 RGB value strings
+        # @return [Array<Integer>] Array of 3 integers (0-255)
+        # @raise [ParseError] If values are invalid
+        def parse_rgb_values(values)
+          values.map.with_index do |v, i|
             unless v.match?(/\A-?\d+\z/)
               component = ["red", "green", "blue"][i]
               raise ParseError, "Invalid #{component} value: #{v.inspect} (must be a number)"
             end
+            v.to_i
           end
-
-          # Convert to integers (constructor will clamp)
-          parsed = values.map(&:to_i)
-
-          new(red: parsed[0], green: parsed[1], blue: parsed[2])
         end
       end
 
@@ -268,16 +304,27 @@ module Unmagic
       # Convert to hexadecimal color string.
       #
       # Returns a lowercase hex string with hash prefix, always 6 characters
-      # (2 per component).
+      # (2 per component). If alpha is less than 100%, includes 8 characters
+      # with alpha as the last 2 hex digits.
       #
-      # @return [String] Hex color string like "#ff5733"
+      # @return [String] Hex color string like "#ff5733" or "#ff5733 80" with alpha
       #
-      # @example
+      # @example Fully opaque color
       #   rgb = RGB.new(red: 255, green: 87, blue: 51)
       #   rgb.to_hex
       #   # => "#ff5733"
+      #
+      # @example Semi-transparent color
+      #   rgb = RGB.new(red: 255, green: 87, blue: 51, alpha: 50)
+      #   rgb.to_hex
+      #   # => "#ff573380"
       def to_hex
-        format("#%02x%02x%02x", @red.value, @green.value, @blue.value)
+        if @alpha.value < 100
+          alpha_hex = (@alpha.to_ratio * 255).round.to_s(16).rjust(2, "0")
+          format("#%02x%02x%02x%s", @red.value, @green.value, @blue.value, alpha_hex)
+        else
+          format("#%02x%02x%02x", @red.value, @green.value, @blue.value)
+        end
       end
 
       # Convert to HSL color space.
@@ -322,7 +369,12 @@ module Unmagic
           end
         end
 
-        Unmagic::Color::HSL.new(hue: (h * 360).round, saturation: (s * 100).round, lightness: (l * 100).round)
+        Unmagic::Color::HSL.new(
+          hue: (h * 360).round,
+          saturation: (s * 100).round,
+          lightness: (l * 100).round,
+          alpha: @alpha,
+        )
       end
 
       # Convert to OKLCH color space.
@@ -341,7 +393,7 @@ module Unmagic
         hsl = to_hsl
         c = hsl.saturation.to_ratio * 0.2 * (1 - (l - 0.5).abs * 2)
         h = hsl.hue
-        Unmagic::Color::OKLCH.new(lightness: l, chroma: c, hue: h)
+        Unmagic::Color::OKLCH.new(lightness: l, chroma: c, hue: h, alpha: @alpha)
       end
 
       # Calculate the relative luminance.
@@ -396,6 +448,7 @@ module Unmagic
           red: (@red.value * (1 - amount) + other_rgb.red.value * amount).round,
           green: (@green.value * (1 - amount) + other_rgb.green.value * amount).round,
           blue: (@blue.value * (1 - amount) + other_rgb.blue.value * amount).round,
+          alpha: @alpha.value * (1 - amount) + other_rgb.alpha.value * amount,
         )
       end
 
