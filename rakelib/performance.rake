@@ -33,8 +33,8 @@ namespace :color_database do
     require "benchmark"
 
     databases = {
-      "X11" => File.join(Unmagic::Color::DATA_PATH, "x11.txt"),
-      "CSS" => File.join(Unmagic::Color::DATA_PATH, "css.txt"),
+      "X11" => File.join(Unmagic::Color::DATA_PATH, "x11.jsonc"),
+      "CSS" => File.join(Unmagic::Color::DATA_PATH, "css.jsonc"),
     }
 
     iterations = 100
@@ -46,12 +46,12 @@ namespace :color_database do
       # Benchmark database loading (create new database each time)
       load_times = []
       iterations.times do
-        db = Unmagic::Color::RGB::Named::Database.new(filepath, name: name.downcase)
+        db = Unmagic::Color::RGB::Named::Database.new(path: filepath, name: name.downcase)
         load_times << Benchmark.realtime { db.send(:data) }
       end
 
       # Create database for lookup benchmarks
-      db = Unmagic::Color::RGB::Named::Database.new(filepath, name: name.downcase)
+      db = Unmagic::Color::RGB::Named::Database.new(path: filepath, name: name.downcase)
       db.send(:data) # Preload
 
       # Benchmark lookups

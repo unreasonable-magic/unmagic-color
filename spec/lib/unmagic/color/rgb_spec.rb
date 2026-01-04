@@ -493,6 +493,96 @@ RSpec.describe(Unmagic::Color::RGB) do
     end
   end
 
+  describe ".build" do
+    describe "with integer argument" do
+      it "creates RGB from hexadecimal or decimal integer" do
+        # Test hexadecimal notation
+        color = described_class.build(0xDAA520)
+        expect(color.red.value).to(eq(218))
+        expect(color.green.value).to(eq(165))
+        expect(color.blue.value).to(eq(32))
+
+        # Test decimal notation (same value)
+        color = described_class.build(14329120)
+        expect(color.red.value).to(eq(218))
+        expect(color.green.value).to(eq(165))
+        expect(color.blue.value).to(eq(32))
+      end
+
+      it "handles black (0)" do
+        color = described_class.build(0)
+        expect(color.red.value).to(eq(0))
+        expect(color.green.value).to(eq(0))
+        expect(color.blue.value).to(eq(0))
+      end
+
+      it "handles white (0xFFFFFF)" do
+        color = described_class.build(0xFFFFFF)
+        expect(color.red.value).to(eq(255))
+        expect(color.green.value).to(eq(255))
+        expect(color.blue.value).to(eq(255))
+      end
+
+      it "handles red (0xFF0000)" do
+        color = described_class.build(0xFF0000)
+        expect(color.red.value).to(eq(255))
+        expect(color.green.value).to(eq(0))
+        expect(color.blue.value).to(eq(0))
+      end
+
+      it "handles green (0x00FF00)" do
+        color = described_class.build(0x00FF00)
+        expect(color.red.value).to(eq(0))
+        expect(color.green.value).to(eq(255))
+        expect(color.blue.value).to(eq(0))
+      end
+
+      it "handles blue (0x0000FF)" do
+        color = described_class.build(0x0000FF)
+        expect(color.red.value).to(eq(0))
+        expect(color.green.value).to(eq(0))
+        expect(color.blue.value).to(eq(255))
+      end
+    end
+
+    describe "with string argument" do
+      it "delegates to parse" do
+        color = described_class.build("#DAA520")
+        expect(color.red.value).to(eq(218))
+        expect(color.green.value).to(eq(165))
+        expect(color.blue.value).to(eq(32))
+      end
+    end
+
+    describe "with three arguments" do
+      it "creates RGB from positional values" do
+        color = described_class.build(218, 165, 32)
+        expect(color.red.value).to(eq(218))
+        expect(color.green.value).to(eq(165))
+        expect(color.blue.value).to(eq(32))
+      end
+    end
+
+    describe "with keyword arguments" do
+      it "creates RGB from keyword arguments" do
+        color = described_class.build(red: 218, green: 165, blue: 32)
+        expect(color.red.value).to(eq(218))
+        expect(color.green.value).to(eq(165))
+        expect(color.blue.value).to(eq(32))
+      end
+    end
+
+    describe "with invalid arguments" do
+      it "raises error for invalid type" do
+        expect { described_class.build([]) }.to(raise_error(ArgumentError, "Expected Integer or String, got Array"))
+      end
+
+      it "raises error for wrong number of arguments" do
+        expect { described_class.build(1, 2) }.to(raise_error(ArgumentError, "Expected 1 or 3 arguments, got 2"))
+      end
+    end
+  end
+
   describe "#pretty_print" do
     it "outputs standard Ruby format with colored swatch in class name" do
       rgb = new(red: 255, green: 0, blue: 0)

@@ -121,13 +121,17 @@ module Unmagic
           parse_rgb_format(input)
         end
 
-        # Build an RGB color from a string, positional values, or keyword arguments.
+        # Build an RGB color from an integer, string, positional values, or keyword arguments.
         #
-        # @param args [String, Integer] Either a color string or 3 component values
+        # @param args [Integer, String, Array<Integer>] Either an integer (0xRRGGBB), color string, or 3 component values
         # @option kwargs [Integer] :red Red component (0-255)
         # @option kwargs [Integer] :green Green component (0-255)
         # @option kwargs [Integer] :blue Blue component (0-255)
         # @return [RGB] The constructed RGB color
+        #
+        # @example From integer (packed RGB)
+        #   RGB.build(0xDAA520)        # goldenrod
+        #   RGB.build(14329120)        # same as 0xDAA520
         #
         # @example From string
         #   RGB.build("#FF8800")
@@ -138,16 +142,35 @@ module Unmagic
         # @example From keyword arguments
         #   RGB.build(red: 255, green: 128, blue: 0)
         def build(*args, **kwargs)
-          if kwargs.any?
-            new(**kwargs)
-          elsif args.length == 1
-            parse(args[0])
-          elsif args.length == 3
-            values = args.map { |v| v.is_a?(::String) ? v.to_i : v }
-            new(red: values[0], green: values[1], blue: values[2])
-          else
-            raise ArgumentError, "Expected 1 or 3 arguments, got #{args.length}"
+          # Handle keyword arguments
+          return new(**kwargs) if kwargs.any?
+
+          # Handle single argument
+          if args.length == 1
+            value = args[0]
+
+            # Integer: extract RGB components via bit operations
+            if value.is_a?(::Integer)
+              return new(
+                red: (value >> 16) & 0xFF,
+                green: (value >> 8) & 0xFF,
+                blue: value & 0xFF,
+              )
+            end
+
+            # String: delegate to parse
+            return parse(value) if value.is_a?(::String)
+
+            raise ArgumentError, "Expected Integer or String, got #{value.class}"
           end
+
+          # Handle three positional arguments (r, g, b)
+          if args.length == 3
+            values = args.map { |v| v.is_a?(::String) ? v.to_i : v }
+            return new(red: values[0], green: values[1], blue: values[2])
+          end
+
+          raise ArgumentError, "Expected 1 or 3 arguments, got #{args.length}"
         end
 
         # Generate a deterministic RGB color from an integer seed.

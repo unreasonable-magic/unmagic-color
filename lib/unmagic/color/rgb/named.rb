@@ -45,11 +45,11 @@ module Unmagic
 
           # Initialize a new color database.
           #
-          # @param filepath [String] Path to the database file
+          # @param path [String] Path to the database file
           # @param name [String, nil] The name of the database (e.g., "x11", "css")
           # @param aliases [Array<String>] Alternative names for the database
-          def initialize(filepath, name: nil, aliases: [])
-            @filepath = filepath
+          def initialize(path:, name: nil, aliases: [])
+            @filepath = path
             @name = name
             @aliases = aliases
             @data = nil
@@ -61,8 +61,8 @@ module Unmagic
           # @return [RGB, nil] The RGB color instance or nil if not found
           def [](color_name)
             normalized = normalize_name(color_name)
-            hex_value = data[normalized]
-            hex_value ? Hex.parse(hex_value) : nil
+            int_value = data[normalized]
+            int_value ? RGB.build(int_value) : nil
           end
 
           # Check if color exists in database.
@@ -109,7 +109,7 @@ module Unmagic
 
           # Lazy load data from file.
           #
-          # @return [Hash] Hash of normalized color names to hex values
+          # @return [Hash] Hash of normalized color names to integer values
           def data
             @data ||= load_data
           end
@@ -123,31 +123,19 @@ module Unmagic
             name.to_s.downcase.gsub(/\s+/, "")
           end
 
+          require "json"
+
           # Load and parse database file.
           #
-          # @return [Hash] Hash of normalized color names to hex values
+          # @return [Hash] Hash of normalized color names to integer values
           def load_data
             unless File.exist?(@filepath)
               raise Error, "Color database file not found: #{@filepath}"
             end
 
-            colors = {}
-
-            File.readlines(@filepath).each do |line|
-              name, hex = line.strip.split("\t")
-              next if name.nil? || hex.nil?
-
-              # Normalize hex value (fix double ## issue)
-              hex = hex.sub(/^#+/, "#").freeze
-
-              # Skip duplicates (keep first occurrence)
-              normalized = normalize_name(name)
-              next if colors.key?(normalized)
-
-              colors[normalized] = hex
-            end
-
-            colors
+            # Load and parse JSON file (Ruby's JSON parser handles // comments)
+            # Keys are already normalized in the JSON file
+            JSON.parse(File.read(@filepath))
           end
         end
 
@@ -155,10 +143,17 @@ module Unmagic
         class ParseError < Color::Error; end
 
         # X11 color database (658 colors)
-        X11 = Database.new(File.join(Color::DATA_PATH, "x11.txt"), name: "x11")
+        X11 = Database.new(
+          path: File.join(Color::DATA_PATH, "x11.jsonc"),
+          name: "x11",
+        )
 
         # CSS/W3C color database (148 colors)
-        CSS = Database.new(File.join(Color::DATA_PATH, "css.txt"), name: "css", aliases: ["w3c"])
+        CSS = Database.new(
+          path: File.join(Color::DATA_PATH, "css.jsonc"),
+          name: "css",
+          aliases: ["w3c"],
+        )
 
         class << self
           # Parse a named color and return its RGB representation.
