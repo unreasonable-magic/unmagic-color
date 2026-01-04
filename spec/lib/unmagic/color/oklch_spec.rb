@@ -277,6 +277,92 @@ RSpec.describe(Unmagic::Color::OKLCH) do
     end
   end
 
+  describe "alpha channel support" do
+    describe "initialization" do
+      it "defaults alpha to 100 (fully opaque)" do
+        oklch = new(lightness: 0.65, chroma: 0.15, hue: 240)
+        expect(oklch.alpha.value).to(eq(100.0))
+      end
+
+      it "accepts explicit alpha value" do
+        oklch = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 50)
+        expect(oklch.alpha.value).to(eq(50.0))
+      end
+    end
+
+    describe "parsing with alpha" do
+      it "parses oklch(L C H / alpha) format" do
+        oklch = parse("oklch(0.65 0.15 240 / 0.5)")
+        expect(oklch.lightness).to(be_within(0.001).of(0.65))
+        expect(oklch.chroma.value).to(be_within(0.001).of(0.15))
+        expect(oklch.hue.value).to(eq(240))
+        expect(oklch.alpha.value).to(eq(50.0))
+      end
+
+      it "parses oklch(L C H / percentage) format" do
+        oklch = parse("oklch(0.65 0.15 240 / 50%)")
+        expect(oklch.alpha.value).to(eq(50.0))
+      end
+    end
+
+    describe "output with alpha" do
+      describe "#to_css_oklch" do
+        it "includes alpha when alpha < 100" do
+          oklch = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 50)
+          expect(oklch.to_css_oklch).to(include("/ 0.5"))
+        end
+
+        it "omits alpha when alpha = 100" do
+          oklch = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 100)
+          expect(oklch.to_css_oklch).not_to(include("/"))
+        end
+
+        it "omits alpha when alpha is default" do
+          oklch = new(lightness: 0.65, chroma: 0.15, hue: 240)
+          expect(oklch.to_css_oklch).not_to(include("/"))
+        end
+      end
+
+      describe "#to_s" do
+        it "returns css_oklch format with alpha" do
+          oklch = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 75)
+          expect(oklch.to_s).to(eq(oklch.to_css_oklch))
+        end
+      end
+    end
+
+    describe "blending with alpha" do
+      it "interpolates alpha values" do
+        oklch1 = new(lightness: 0.65, chroma: 0.15, hue: 30, alpha: 100)
+        oklch2 = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 0)
+        blended = oklch1.blend(oklch2, 0.5)
+        expect(blended.alpha.value).to(eq(50.0))
+      end
+
+      it "blends colors with different alpha" do
+        oklch1 = new(lightness: 0.65, chroma: 0.15, hue: 30, alpha: 80)
+        oklch2 = new(lightness: 0.65, chroma: 0.15, hue: 120, alpha: 20)
+        blended = oklch1.blend(oklch2, 0.25)
+        expect(blended.alpha.value).to(eq(65.0))
+      end
+    end
+
+    describe "conversions preserve alpha" do
+      it "preserves alpha when converting to RGB" do
+        oklch = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 50)
+        rgb = oklch.to_rgb
+        expect(rgb.alpha.value).to(eq(50.0))
+      end
+
+      it "preserves alpha through OKLCH→RGB→OKLCH conversion" do
+        oklch1 = new(lightness: 0.65, chroma: 0.15, hue: 240, alpha: 60)
+        rgb = oklch1.to_rgb
+        oklch2 = rgb.to_oklch
+        expect(oklch2.alpha.value).to(eq(60.0))
+      end
+    end
+  end
+
   describe "#pretty_print" do
     it "outputs standard Ruby format with colored swatch in class name" do
       oklch = new(lightness: 0.60, chroma: 0.15, hue: 240)

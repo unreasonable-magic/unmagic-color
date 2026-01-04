@@ -75,31 +75,38 @@ module Unmagic
       # Error raised when parsing HSL color strings fails
       class ParseError < Color::Error; end
 
-      attr_reader :hue, :saturation, :lightness
+      attr_reader :hue, :saturation, :lightness, :alpha
 
       # Create a new HSL color.
       #
       # @param hue [Numeric] Hue in degrees (0-360), wraps around if outside range
       # @param saturation [Numeric] Saturation percentage (0-100), clamped to range
       # @param lightness [Numeric] Lightness percentage (0-100), clamped to range
+      # @param alpha [Numeric, Color::Alpha, nil] Alpha channel (0-100%), defaults to 100 (fully opaque)
       #
       # @example Create a pure red
       #   HSL.new(hue: 0, saturation: 100, lightness: 50)
       #
+      # @example Create a semi-transparent blue
+      #   HSL.new(hue: 240, saturation: 40, lightness: 80, alpha: 50)
+      #
       # @example Create a pastel blue
       #   HSL.new(hue: 240, saturation: 40, lightness: 80)
-      def initialize(hue:, saturation:, lightness:)
+      def initialize(hue:, saturation:, lightness:, alpha: nil)
         super()
         @hue = Color::Hue.new(value: hue)
         @saturation = Color::Saturation.new(saturation)
         @lightness = Color::Lightness.new(lightness)
+        alpha_value = alpha.nil? ? 100 : alpha
+        @alpha = alpha_value.is_a?(Color::Alpha) ? alpha_value : Color::Alpha.new(alpha_value)
       end
 
       class << self
         # Parse an HSL color from a string.
         #
         # Accepts formats:
-        # - CSS format: "hsl(120, 100%, 50%)"
+        # - Legacy: "hsl(120, 100%, 50%)" or "hsla(120, 100%, 50%, 0.5)"
+        # - Modern: "hsl(120 100% 50% / 0.5)" or "hsl(120 100% 50% / 50%)"
         # - Raw values: "120, 100%, 50%" or "120, 100, 50"
         # - Percentages optional for saturation and lightness
         #
@@ -110,18 +117,51 @@ module Unmagic
         # @example Parse CSS format
         #   HSL.parse("hsl(120, 100%, 50%)")
         #
+        # @example Parse with alpha
+        #   HSL.parse("hsl(120 100% 50% / 0.5)")
+        #
         # @example Parse without function wrapper
         #   HSL.parse("240, 50%, 75%")
         def parse(input)
           raise ParseError, "Input must be a string" unless input.is_a?(::String)
 
-          # Remove hsl() wrapper if present
-          clean = input.gsub(/^hsl\s*\(\s*|\s*\)$/, "").strip
+          # Remove hsl() or hsla() wrapper if present
+          clean = input.gsub(/^hsla?\s*\(\s*|\s*\)$/, "").strip
 
-          # Split and parse values
-          parts = clean.split(/\s*,\s*/)
-          unless parts.length == 3
-            raise ParseError, "Expected 3 HSL values, got #{parts.length}"
+          # Check for modern format with slash (space-separated with / for alpha)
+          # Example: "120 100% 50% / 0.5"
+          # Note: Modern format is only used WITH the hsl() wrapper
+          alpha = nil
+          has_slash = clean.include?("/")
+          if has_slash
+            parts = clean.split("/").map(&:strip)
+            raise ParseError, "Invalid format with /: expected 'H S% L% / alpha'" unless parts.length == 2
+
+            clean = parts[0]
+            alpha = Color::Alpha.parse(parts[1])
+          end
+
+          # Split HSL values
+          # - Comma-separated: legacy format (with or without hsl() wrapper)
+          # - Space-separated: only valid WITH hsl() wrapper (modern format)
+          parts = if clean.include?(",")
+            # Legacy comma-separated format
+            clean.split(/\s*,\s*/)
+          elsif has_slash || input.match?(/^hsla?\s*\(/)
+            # Modern space-separated format (only with hsl() wrapper or slash)
+            clean.split(/\s+/)
+          else
+            # No commas and no hsl() wrapper - invalid
+            raise ParseError, "Space-separated values require hsl() wrapper, use commas for raw values"
+          end
+
+          unless [3, 4].include?(parts.length)
+            raise ParseError, "Expected 3 or 4 HSL values, got #{parts.length}"
+          end
+
+          # Parse alpha from 4th value if present (legacy format)
+          if parts.length == 4 && alpha.nil?
+            alpha = Color::Alpha.parse(parts[3])
           end
 
           # Check if hue is numeric
@@ -159,7 +199,7 @@ module Unmagic
             raise ParseError, "Lightness must be between 0 and 100, got #{l}"
           end
 
-          new(hue: h, saturation: s, lightness: l)
+          new(hue: h, saturation: s, lightness: l, alpha: alpha)
         end
 
         # Build an HSL color from a string, positional values, or keyword arguments.
@@ -240,7 +280,7 @@ module Unmagic
       def to_rgb
         rgb = hsl_to_rgb
         require_relative "rgb"
-        Unmagic::Color::RGB.new(red: rgb[0], green: rgb[1], blue: rgb[2])
+        Unmagic::Color::RGB.new(red: rgb[0], green: rgb[1], blue: rgb[2], alpha: @alpha)
       end
 
       # Convert to OKLCH color space.
@@ -283,7 +323,12 @@ module Unmagic
         new_saturation = @saturation.value * (1 - amount) + other_hsl.saturation.value * amount
         new_lightness = @lightness.value * (1 - amount) + other_hsl.lightness.value * amount
 
-        Unmagic::Color::HSL.new(hue: new_hue, saturation: new_saturation, lightness: new_lightness)
+        Unmagic::Color::HSL.new(
+          hue: new_hue,
+          saturation: new_saturation,
+          lightness: new_lightness,
+          alpha: @alpha.value * (1 - amount) + other_hsl.alpha.value * amount,
+        )
       end
 
       # Create a lighter version by increasing lightness.
@@ -396,16 +441,26 @@ module Unmagic
 
       # Convert to string representation.
       #
-      # Returns the CSS hsl() function format.
+      # Returns the CSS hsl() function format. If alpha is less than 100%,
+      # includes alpha value using modern CSS syntax with / separator.
       #
-      # @return [String] HSL string like "hsl(240, 80%, 50%)"
+      # @return [String] HSL string like "hsl(240, 80%, 50%)" or "hsl(240, 80%, 50% / 0.5)"
       #
-      # @example
+      # @example Fully opaque
       #   color = HSL.new(hue: 240, saturation: 80, lightness: 50)
       #   color.to_s
       #   # => "hsl(240, 80.0%, 50.0%)"
+      #
+      # @example Semi-transparent
+      #   color = HSL.new(hue: 240, saturation: 80, lightness: 50, alpha: 50)
+      #   color.to_s
+      #   # => "hsl(240, 80.0%, 50.0% / 0.5)"
       def to_s
-        "hsl(#{@hue.value.round}, #{@saturation.value}%, #{@lightness.value}%)"
+        if @alpha.value < 100
+          "hsl(#{@hue.value.round}, #{@saturation.value}%, #{@lightness.value}% / #{@alpha.to_css})"
+        else
+          "hsl(#{@hue.value.round}, #{@saturation.value}%, #{@lightness.value}%)"
+        end
       end
 
       # Convert to ANSI SGR color code.

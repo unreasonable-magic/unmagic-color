@@ -49,6 +49,64 @@ module Unmagic
         @value = @value.clamp(0.0, 100.0)
       end
 
+      class << self
+        # Parse a percentage from string format.
+        #
+        # Handles multiple formats:
+        # - Explicit percentage: "50%" → 50.0
+        # - Fraction notation: "10/100" → 10.0
+        # - Bare decimal ≤ 1.0: "0.5" → 50.0 (treated as ratio)
+        # - Bare decimal > 1.0: "75" → 75.0 (treated as literal percentage)
+        #
+        # @param input [String] The string to parse
+        # @return [Percentage] The parsed percentage
+        # @raise [ArgumentError] If input is not a string or format is invalid
+        #
+        # @example Parse explicit percentage
+        #   Percentage.parse("23.5%")
+        #   #=> Percentage with value 23.5
+        #
+        # @example Parse ratio
+        #   Percentage.parse("0.5")
+        #   #=> Percentage with value 50.0
+        #
+        # @example Parse fraction
+        #   Percentage.parse("1/4")
+        #   #=> Percentage with value 25.0
+        def parse(input)
+          raise ArgumentError, "Input must be a string" unless input.is_a?(::String)
+
+          input = input.strip
+
+          # Handle explicit percentage format
+          if input.end_with?("%")
+            value = input.chomp("%").to_f
+            return new(value)
+          end
+
+          # Handle fraction notation
+          if input.include?("/")
+            parts = input.split("/").map(&:strip)
+            raise ArgumentError, "Invalid fraction format" unless parts.length == 2
+
+            numerator = parts[0].to_f
+            denominator = parts[1].to_f
+            return new(numerator, denominator)
+          end
+
+          # Handle bare numeric values
+          value = input.to_f
+
+          # If value is <= 1.0, treat as ratio (multiply by 100)
+          # If value is > 1.0, treat as literal percentage value
+          if value <= 1.0
+            new(value * 100)
+          else
+            new(value)
+          end
+        end
+      end
+
       # Format as percentage string with configurable decimal places
       #
       # @param decimal_places [Integer] Number of decimal places to display
