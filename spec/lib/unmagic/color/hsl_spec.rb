@@ -5,32 +5,44 @@ require "pp"
 require "stringio"
 
 RSpec.describe(Unmagic::Color::HSL) do
+  def parse(...)
+    Unmagic::Color::HSL.parse(...)
+  end
+
+  def new(...)
+    Unmagic::Color::HSL.new(...)
+  end
+
+  def derive(...)
+    Unmagic::Color::HSL.derive(...)
+  end
+
   describe ".parse" do
     it "parses HSL with parentheses and percents" do
-      color = described_class.parse("hsl(180, 50%, 50%)")
-      expect(color).to(be_a(described_class))
+      color = parse("hsl(180, 50%, 50%)")
+      expect(color).to(be_a(Unmagic::Color::HSL))
       expect(color.hue).to(eq(180))
       expect(color.saturation).to(eq(50))
       expect(color.lightness).to(eq(50))
     end
 
     it "parses HSL without parentheses" do
-      color = described_class.parse("180, 50%, 50%")
-      expect(color).to(be_a(described_class))
+      color = parse("180, 50%, 50%")
+      expect(color).to(be_a(Unmagic::Color::HSL))
       expect(color.hue).to(eq(180))
       expect(color.saturation).to(eq(50))
       expect(color.lightness).to(eq(50))
     end
 
     it "parses HSL without percent signs" do
-      color = described_class.parse("hsl(180, 50, 50)")
+      color = parse("hsl(180, 50, 50)")
       expect(color.hue).to(eq(180))
       expect(color.saturation).to(eq(50))
       expect(color.lightness).to(eq(50))
     end
 
     it "parses HSL with extra spaces" do
-      color = described_class.parse("hsl(  180  ,  50%  ,  50%  )")
+      color = parse("hsl(  180  ,  50%  ,  50%  )")
       expect(color.hue).to(eq(180))
       expect(color.saturation).to(eq(50))
       expect(color.lightness).to(eq(50))
@@ -38,42 +50,42 @@ RSpec.describe(Unmagic::Color::HSL) do
 
     it "converts to RGB correctly" do
       # Red
-      red = described_class.parse("hsl(0, 100%, 50%)")
+      red = parse("hsl(0, 100%, 50%)")
       red_rgb = red.to_rgb
       expect(red_rgb.red).to(eq(255))
       expect(red_rgb.green).to(eq(0))
       expect(red_rgb.blue).to(eq(0))
 
       # Green
-      green = described_class.parse("hsl(120, 100%, 50%)")
+      green = parse("hsl(120, 100%, 50%)")
       green_rgb = green.to_rgb
       expect(green_rgb.red).to(eq(0))
       expect(green_rgb.green).to(eq(255))
       expect(green_rgb.blue).to(eq(0))
 
       # Blue
-      blue = described_class.parse("hsl(240, 100%, 50%)")
+      blue = parse("hsl(240, 100%, 50%)")
       blue_rgb = blue.to_rgb
       expect(blue_rgb.red).to(eq(0))
       expect(blue_rgb.green).to(eq(0))
       expect(blue_rgb.blue).to(eq(255))
 
       # Gray
-      gray = described_class.parse("hsl(0, 0%, 50%)")
+      gray = parse("hsl(0, 0%, 50%)")
       gray_rgb = gray.to_rgb
       expect(gray_rgb.red).to(eq(128))
       expect(gray_rgb.green).to(eq(128))
       expect(gray_rgb.blue).to(eq(128))
 
       # White
-      white = described_class.parse("hsl(0, 0%, 100%)")
+      white = parse("hsl(0, 0%, 100%)")
       white_rgb = white.to_rgb
       expect(white_rgb.red).to(eq(255))
       expect(white_rgb.green).to(eq(255))
       expect(white_rgb.blue).to(eq(255))
 
       # Black
-      black = described_class.parse("hsl(0, 0%, 0%)")
+      black = parse("hsl(0, 0%, 0%)")
       black_rgb = black.to_rgb
       expect(black_rgb.red).to(eq(0))
       expect(black_rgb.green).to(eq(0))
@@ -81,89 +93,89 @@ RSpec.describe(Unmagic::Color::HSL) do
     end
 
     it "handles hue wrapping" do
-      color1 = described_class.parse("hsl(0, 100%, 50%)")
-      color2 = described_class.parse("hsl(360, 100%, 50%)")
+      color1 = parse("hsl(0, 100%, 50%)")
+      color2 = parse("hsl(360, 100%, 50%)")
       expect(color1.to_rgb.to_hex).to(eq(color2.to_rgb.to_hex))
     end
 
     it "raises ParseError for invalid input" do
-      expect { described_class.parse("hsl(180, 50%)") }.to(raise_error(Unmagic::Color::HSL::ParseError))
-      expect { described_class.parse("hsl(red, green, blue)") }.to(raise_error(Unmagic::Color::HSL::ParseError))
-      expect { described_class.parse("180 50 50") }.to(raise_error(Unmagic::Color::HSL::ParseError))
-      expect { described_class.parse("") }.to(raise_error(Unmagic::Color::HSL::ParseError))
-      expect { described_class.parse(nil) }.to(raise_error(Unmagic::Color::HSL::ParseError))
-      expect { described_class.parse(123) }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse("hsl(180, 50%)") }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse("hsl(red, green, blue)") }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse("180 50 50") }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse("") }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse(nil) }.to(raise_error(Unmagic::Color::HSL::ParseError))
+      expect { parse(123) }.to(raise_error(Unmagic::Color::HSL::ParseError))
     end
   end
 
   describe ".derive" do
     it "generates consistent colors from integer seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(12345)
+      color1 = derive(12345)
+      color2 = derive(12345)
       expect(color1.hue).to(eq(color2.hue))
       expect(color1.saturation).to(eq(color2.saturation))
       expect(color1.lightness).to(eq(color2.lightness))
     end
 
     it "generates different colors for different seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(54321)
+      color1 = derive(12345)
+      color2 = derive(54321)
       expect(color1).not_to(eq(color2))
     end
 
     it "respects custom parameters" do
-      color = described_class.derive(12345, lightness: 70, saturation_range: (20..40))
+      color = derive(12345, lightness: 70, saturation_range: (20..40))
       expect(color.lightness).to(eq(70))
       expect(color.saturation).to(be_between(20, 40))
     end
 
     it "raises error for non-integer seeds" do
-      expect { described_class.derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
-      expect { described_class.derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
     end
   end
 
   describe "#new" do
     it "creates HSL color with keyword arguments" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: 50)
+      color = new(hue: 180, saturation: 50, lightness: 50)
       expect(color.hue).to(eq(180))
       expect(color.saturation).to(eq(50))
       expect(color.lightness).to(eq(50))
     end
 
     it "wraps hue values" do
-      color = described_class.new(hue: 720, saturation: 50, lightness: 50)
+      color = new(hue: 720, saturation: 50, lightness: 50)
       expect(color.hue).to(eq(0)) # 720 % 360 = 0
     end
 
     it "clamps saturation to 0-100" do
-      color = described_class.new(hue: 180, saturation: 150, lightness: 50)
+      color = new(hue: 180, saturation: 150, lightness: 50)
       expect(color.saturation).to(eq(100))
     end
 
     it "clamps lightness to 0-100" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: -50)
+      color = new(hue: 180, saturation: 50, lightness: -50)
       expect(color.lightness).to(eq(0))
     end
   end
 
   describe "#to_hsl" do
     it "returns itself" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: 50)
+      color = new(hue: 180, saturation: 50, lightness: 50)
       expect(color.to_hsl).to(eq(color))
     end
   end
 
   describe "methods" do
     it "has expected methods" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: 50)
-      expect(color).to(be_a(described_class))
+      color = new(hue: 180, saturation: 50, lightness: 50)
+      expect(color).to(be_a(Unmagic::Color::HSL))
       expect(color).to(respond_to(:luminance))
       expect(color).to(respond_to(:blend))
     end
 
     it "can convert to RGB after initialization" do
-      color = described_class.new(hue: 0, saturation: 100, lightness: 50)
+      color = new(hue: 0, saturation: 100, lightness: 50)
       rgb = color.to_rgb
       expect(rgb.red).to(eq(255))
       expect(rgb.green).to(eq(0))
@@ -172,12 +184,12 @@ RSpec.describe(Unmagic::Color::HSL) do
   end
 
   describe "#progression" do
-    let(:base_hsl) { described_class.new(hue: 180, saturation: 50, lightness: 50) }
+    let(:base_hsl) { new(hue: 180, saturation: 50, lightness: 50) }
 
     it "creates the specified number of color steps" do
       progression = base_hsl.progression(steps: 5, lightness: ->(_hsl, _i) { 80 })
       expect(progression.length).to(eq(5))
-      expect(progression.all? { |color| color.is_a?(described_class) }).to(be(true))
+      expect(progression.all? { |color| color.is_a?(Unmagic::Color::HSL) }).to(be(true))
     end
 
     it "applies lightness transformation using provided proc" do
@@ -403,17 +415,17 @@ RSpec.describe(Unmagic::Color::HSL) do
 
   describe "#to_ansi" do
     it "delegates to RGB#to_ansi" do
-      color = described_class.new(hue: 0, saturation: 100, lightness: 50)
+      color = new(hue: 0, saturation: 100, lightness: 50)
       expect(color.to_ansi).to(eq("38;2;255;0;0")) # Pure red
     end
 
     it "supports background layer" do
-      color = described_class.new(hue: 0, saturation: 100, lightness: 50)
+      color = new(hue: 0, saturation: 100, lightness: 50)
       expect(color.to_ansi(layer: :background)).to(eq("48;2;255;0;0"))
     end
 
     it "uses true color for non-standard colors" do
-      color = described_class.new(hue: 180, saturation: 50, lightness: 50)
+      color = new(hue: 180, saturation: 50, lightness: 50)
       result = color.to_ansi
       expect(result).to(match(/\A38;2;\d+;\d+;\d+\z/))
     end
@@ -421,7 +433,7 @@ RSpec.describe(Unmagic::Color::HSL) do
 
   describe "#pretty_print" do
     it "outputs standard Ruby format with colored swatch in class name" do
-      hsl = described_class.new(hue: 240, saturation: 80, lightness: 50)
+      hsl = new(hue: 240, saturation: 80, lightness: 50)
       io = StringIO.new
       PP.pp(hsl, io)
 
@@ -435,7 +447,7 @@ RSpec.describe(Unmagic::Color::HSL) do
     end
 
     it "rounds component values" do
-      hsl = described_class.new(hue: 9.7, saturation: 99.6, lightness: 60.4)
+      hsl = new(hue: 9.7, saturation: 99.6, lightness: 60.4)
       io = StringIO.new
       PP.pp(hsl, io)
 

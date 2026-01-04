@@ -13,6 +13,14 @@ RSpec.describe(Unmagic::Color::RGB) do
     Unmagic::Color::RGB.new(...)
   end
 
+  def build(...)
+    Unmagic::Color::RGB.build(...)
+  end
+
+  def derive(...)
+    Unmagic::Color::RGB.derive(...)
+  end
+
   describe ".parse" do
     it "raises ParseError for invalid RGB values" do
       expect { parse("rgb(255)") }.to(raise_error(Unmagic::Color::RGB::ParseError, "Expected 3 RGB values, got 1"))
@@ -31,7 +39,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses RGB with parentheses" do
       color = parse("rgb(255, 128, 64)")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(128))
       expect(color.blue).to(eq(64))
@@ -39,7 +47,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses RGB without parentheses" do
       color = parse("255, 128, 64")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(128))
       expect(color.blue).to(eq(64))
@@ -68,7 +76,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses 6-character hex with hash" do
       color = parse("#FF8040")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(128))
       expect(color.blue).to(eq(64))
@@ -76,7 +84,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses 6-character hex without hash" do
       color = parse("FF8040")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(128))
       expect(color.blue).to(eq(64))
@@ -84,7 +92,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses 3-character hex codes" do
       color = parse("#F84")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(136))
       expect(color.blue).to(eq(68))
@@ -92,7 +100,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "parses 3-character hex without hash" do
       color = parse("F84")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.red).to(eq(255))
       expect(color.green).to(eq(136))
       expect(color.blue).to(eq(68))
@@ -114,7 +122,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     it "handles whitespace in hex" do
       color = parse("  #FF0000  ")
-      expect(color).to(be_a(described_class))
+      expect(color).to(be_a(Unmagic::Color::RGB))
       expect(color.to_hex).to(eq("#ff0000"))
     end
 
@@ -133,21 +141,21 @@ RSpec.describe(Unmagic::Color::RGB) do
 
   describe ".derive" do
     it "generates consistent colors from integer seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(12345)
+      color1 = derive(12345)
+      color2 = derive(12345)
       expect(color1.red).to(eq(color2.red))
       expect(color1.green).to(eq(color2.green))
       expect(color1.blue).to(eq(color2.blue))
     end
 
     it "generates different colors for different seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(54321)
+      color1 = derive(12345)
+      color2 = derive(54321)
       expect(color1).not_to(eq(color2))
     end
 
     it "respects custom parameters" do
-      color = described_class.derive(12345, brightness: 100, saturation: 0.3)
+      color = derive(12345, brightness: 100, saturation: 0.3)
       # With lower saturation, RGB values should be closer to each other
       expect(color.red).to(be_between(0, 255))
       expect(color.green).to(be_between(0, 255))
@@ -155,8 +163,8 @@ RSpec.describe(Unmagic::Color::RGB) do
     end
 
     it "raises error for non-integer seeds" do
-      expect { described_class.derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
-      expect { described_class.derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
     end
   end
 
@@ -192,7 +200,7 @@ RSpec.describe(Unmagic::Color::RGB) do
     it "returns an RGB instance" do
       color = new(red: 100, green: 150, blue: 200)
       rgb = color.to_rgb
-      expect(rgb).to(be_a(described_class))
+      expect(rgb).to(be_a(Unmagic::Color::RGB))
       expect(rgb.red).to(eq(100))
       expect(rgb.green).to(eq(150))
       expect(rgb.blue).to(eq(200))
@@ -361,114 +369,114 @@ RSpec.describe(Unmagic::Color::RGB) do
   describe "#to_ansi" do
     context "with default (truecolor) mode" do
       it "returns 24-bit true color for non-standard colors" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi
+        result = new(red: 100, green: 150, blue: 200).to_ansi
         expect(result).to(eq("38;2;100;150;200"))
       end
 
       it "returns background true color with layer: :background" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(layer: :background)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(layer: :background)
         expect(result).to(eq("48;2;100;150;200"))
       end
 
       it "uses true color for colors close to but not exactly ANSI colors" do
         # Almost red, but not exactly
-        result = described_class.new(red: 254, green: 0, blue: 0).to_ansi
+        result = new(red: 254, green: 0, blue: 0).to_ansi
         expect(result).to(eq("38;2;254;0;0"))
       end
     end
 
     context "with mode: :truecolor" do
       it "returns 24-bit true color for all colors" do
-        expect(described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;255;0;0"))
-        expect(described_class.new(red: 0, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;0;0;0"))
+        expect(new(red: 255, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;255;0;0"))
+        expect(new(red: 0, green: 0, blue: 0).to_ansi(mode: :truecolor)).to(eq("38;2;0;0;0"))
       end
 
       it "returns 24-bit true color for custom colors" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor)
         expect(result).to(eq("38;2;100;150;200"))
       end
 
       it "works with background layer" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor, layer: :background)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :truecolor, layer: :background)
         expect(result).to(eq("48;2;100;150;200"))
       end
     end
 
     context "with mode: :palette256" do
       it "converts to 256-color palette for foreground" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256)
         expect(result).to(match(/^38;5;\d+$/))
       end
 
       it "converts to 256-color palette for background" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256, layer: :background)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette256, layer: :background)
         expect(result).to(match(/^48;5;\d+$/))
       end
 
       it "maps standard colors to RGB cube" do
-        red = described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette256)
+        red = new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette256)
         expect(red).to(eq("38;5;196"))
       end
 
       it "maps grayscale colors to grayscale ramp" do
-        gray = described_class.new(red: 128, green: 128, blue: 128).to_ansi(mode: :palette256)
+        gray = new(red: 128, green: 128, blue: 128).to_ansi(mode: :palette256)
         expect(gray).to(match(/^38;5;(232|233|234|235|236|237|238|239|240|241|242|243|244|245)$/))
       end
 
       it "maps RGB cube colors correctly" do
-        color = described_class.new(red: 95, green: 135, blue: 175).to_ansi(mode: :palette256)
+        color = new(red: 95, green: 135, blue: 175).to_ansi(mode: :palette256)
         expect(color).to(eq("38;5;67"))
       end
     end
 
     context "with mode: :palette16" do
       it "converts to 16-color palette codes for foreground" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
         expect(result).to(match(/^9[0-7]$/))
       end
 
       it "converts to 16-color palette codes for background" do
-        result = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16, layer: :background)
+        result = new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16, layer: :background)
         expect(result).to(match(/^10[0-7]$/))
       end
 
       it "maps to nearest palette color" do
-        red = described_class.new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette16)
+        red = new(red: 255, green: 0, blue: 0).to_ansi(mode: :palette16)
         expect(red).to(eq("91"))
 
-        green = described_class.new(red: 0, green: 255, blue: 0).to_ansi(mode: :palette16)
+        green = new(red: 0, green: 255, blue: 0).to_ansi(mode: :palette16)
         expect(green).to(eq("92"))
 
-        blue = described_class.new(red: 0, green: 0, blue: 255).to_ansi(mode: :palette16)
+        blue = new(red: 0, green: 0, blue: 255).to_ansi(mode: :palette16)
         expect(blue).to(eq("94"))
       end
 
       it "finds nearest color for custom RGB" do
-        color = described_class.new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
+        color = new(red: 100, green: 150, blue: 200).to_ansi(mode: :palette16)
         expect(color).to(eq("96"))
       end
 
       it "maps black correctly" do
-        black = described_class.new(red: 0, green: 0, blue: 0).to_ansi(mode: :palette16)
+        black = new(red: 0, green: 0, blue: 0).to_ansi(mode: :palette16)
         expect(black).to(eq("90"))
       end
 
       it "maps white correctly" do
-        white = described_class.new(red: 255, green: 255, blue: 255).to_ansi(mode: :palette16)
+        white = new(red: 255, green: 255, blue: 255).to_ansi(mode: :palette16)
         expect(white).to(eq("97"))
       end
     end
 
     context "with error handling" do
       it "raises ArgumentError for invalid layer" do
-        color = described_class.new(red: 255, green: 0, blue: 0)
+        color = new(red: 255, green: 0, blue: 0)
         expect do
           color.to_ansi(layer: :invalid)
         end.to(raise_error(ArgumentError, /layer must be :foreground or :background/))
       end
 
       it "raises ArgumentError for invalid mode" do
-        color = described_class.new(red: 255, green: 0, blue: 0)
+        color = new(red: 255, green: 0, blue: 0)
         expect do
           color.to_ansi(mode: :invalid)
         end.to(raise_error(ArgumentError, /mode must be :truecolor, :palette256, or :palette16/))
@@ -497,48 +505,48 @@ RSpec.describe(Unmagic::Color::RGB) do
     describe "with integer argument" do
       it "creates RGB from hexadecimal or decimal integer" do
         # Test hexadecimal notation
-        color = described_class.build(0xDAA520)
+        color = build(0xDAA520)
         expect(color.red.value).to(eq(218))
         expect(color.green.value).to(eq(165))
         expect(color.blue.value).to(eq(32))
 
         # Test decimal notation (same value)
-        color = described_class.build(14329120)
+        color = build(14329120)
         expect(color.red.value).to(eq(218))
         expect(color.green.value).to(eq(165))
         expect(color.blue.value).to(eq(32))
       end
 
       it "handles black (0)" do
-        color = described_class.build(0)
+        color = build(0)
         expect(color.red.value).to(eq(0))
         expect(color.green.value).to(eq(0))
         expect(color.blue.value).to(eq(0))
       end
 
       it "handles white (0xFFFFFF)" do
-        color = described_class.build(0xFFFFFF)
+        color = build(0xFFFFFF)
         expect(color.red.value).to(eq(255))
         expect(color.green.value).to(eq(255))
         expect(color.blue.value).to(eq(255))
       end
 
       it "handles red (0xFF0000)" do
-        color = described_class.build(0xFF0000)
+        color = build(0xFF0000)
         expect(color.red.value).to(eq(255))
         expect(color.green.value).to(eq(0))
         expect(color.blue.value).to(eq(0))
       end
 
       it "handles green (0x00FF00)" do
-        color = described_class.build(0x00FF00)
+        color = build(0x00FF00)
         expect(color.red.value).to(eq(0))
         expect(color.green.value).to(eq(255))
         expect(color.blue.value).to(eq(0))
       end
 
       it "handles blue (0x0000FF)" do
-        color = described_class.build(0x0000FF)
+        color = build(0x0000FF)
         expect(color.red.value).to(eq(0))
         expect(color.green.value).to(eq(0))
         expect(color.blue.value).to(eq(255))
@@ -547,7 +555,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     describe "with string argument" do
       it "delegates to parse" do
-        color = described_class.build("#DAA520")
+        color = build("#DAA520")
         expect(color.red.value).to(eq(218))
         expect(color.green.value).to(eq(165))
         expect(color.blue.value).to(eq(32))
@@ -556,7 +564,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     describe "with three arguments" do
       it "creates RGB from positional values" do
-        color = described_class.build(218, 165, 32)
+        color = build(218, 165, 32)
         expect(color.red.value).to(eq(218))
         expect(color.green.value).to(eq(165))
         expect(color.blue.value).to(eq(32))
@@ -565,7 +573,7 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     describe "with keyword arguments" do
       it "creates RGB from keyword arguments" do
-        color = described_class.build(red: 218, green: 165, blue: 32)
+        color = build(red: 218, green: 165, blue: 32)
         expect(color.red.value).to(eq(218))
         expect(color.green.value).to(eq(165))
         expect(color.blue.value).to(eq(32))
@@ -574,11 +582,11 @@ RSpec.describe(Unmagic::Color::RGB) do
 
     describe "with invalid arguments" do
       it "raises error for invalid type" do
-        expect { described_class.build([]) }.to(raise_error(ArgumentError, "Expected Integer or String, got Array"))
+        expect { build([]) }.to(raise_error(ArgumentError, "Expected Integer or String, got Array"))
       end
 
       it "raises error for wrong number of arguments" do
-        expect { described_class.build(1, 2) }.to(raise_error(ArgumentError, "Expected 1 or 3 arguments, got 2"))
+        expect { build(1, 2) }.to(raise_error(ArgumentError, "Expected 1 or 3 arguments, got 2"))
       end
     end
   end

@@ -10,3 +10,6 @@ RSpec/MultipleExpectations:
 
 RSpec/ExampleLength:
   Enabled: false
+
+RSpec/DescribedClass:
+  EnforcedStyle: explicit

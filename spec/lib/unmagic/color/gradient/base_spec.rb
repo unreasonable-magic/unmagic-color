@@ -48,14 +48,14 @@ RSpec.describe(Unmagic::Color::Gradient::Base) do
     it "raises error if stops is not an array" do
       expect do
         gradient_class.new("not an array")
-      end.to(raise_error(described_class::Error, /stops must be an array/))
+      end.to(raise_error(Unmagic::Color::Gradient::Base::Error, /stops must be an array/))
     end
 
     it "raises error if stop is not a Stop object" do
       red = Unmagic::Color::RGB.parse("#FF0000")
       expect do
         gradient_class.new([red, red])
-      end.to(raise_error(described_class::Error, /must be a Stop object/))
+      end.to(raise_error(Unmagic::Color::Gradient::Base::Error, /must be a Stop object/))
     end
   end
 end

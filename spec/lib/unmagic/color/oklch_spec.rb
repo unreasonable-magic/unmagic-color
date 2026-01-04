@@ -5,123 +5,135 @@ require "pp"
 require "stringio"
 
 RSpec.describe(Unmagic::Color::OKLCH) do
+  def parse(...)
+    Unmagic::Color::OKLCH.parse(...)
+  end
+
+  def new(...)
+    Unmagic::Color::OKLCH.new(...)
+  end
+
+  def derive(...)
+    Unmagic::Color::OKLCH.derive(...)
+  end
+
   describe ".parse" do
     it "parses OKLCH with parentheses" do
-      color = described_class.parse("oklch(0.58 0.15 180)")
-      expect(color).to(be_a(described_class))
+      color = parse("oklch(0.58 0.15 180)")
+      expect(color).to(be_a(Unmagic::Color::OKLCH))
       expect(color.lightness).to(be_within(0.01).of(0.58))
       expect(color.chroma).to(be_within(0.01).of(0.15))
       expect(color.hue).to(be_within(0.1).of(180))
     end
 
     it "parses OKLCH without parentheses" do
-      color = described_class.parse("0.58 0.15 180")
-      expect(color).to(be_a(described_class))
+      color = parse("0.58 0.15 180")
+      expect(color).to(be_a(Unmagic::Color::OKLCH))
       expect(color.lightness).to(be_within(0.01).of(0.58))
       expect(color.chroma).to(be_within(0.01).of(0.15))
       expect(color.hue).to(be_within(0.1).of(180))
     end
 
     it "parses OKLCH with decimal values" do
-      color = described_class.parse("oklch(0.75 0.25 45.5)")
+      color = parse("oklch(0.75 0.25 45.5)")
       expect(color.lightness).to(be_within(0.01).of(0.75))
       expect(color.chroma).to(be_within(0.01).of(0.25))
       expect(color.hue).to(be_within(0.1).of(45.5))
     end
 
     it "handles edge cases" do
-      color = described_class.parse("oklch(0.0 0.0 0)")
+      color = parse("oklch(0.0 0.0 0)")
       expect(color.lightness).to(eq(0.0))
       expect(color.chroma).to(eq(0.0))
       expect(color.hue).to(eq(0.0))
     end
 
     it "raises ParseError for invalid input" do
-      expect { described_class.parse("oklch(0.58 0.15)") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
-      expect { described_class.parse("oklch(invalid input)") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
-      expect { described_class.parse("") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
-      expect { described_class.parse(nil) }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
-      expect { described_class.parse(123) }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
+      expect { parse("oklch(0.58 0.15)") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
+      expect { parse("oklch(invalid input)") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
+      expect { parse("") }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
+      expect { parse(nil) }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
+      expect { parse(123) }.to(raise_error(Unmagic::Color::OKLCH::ParseError))
     end
   end
 
   describe ".derive" do
     it "generates consistent colors from integer seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(12345)
+      color1 = derive(12345)
+      color2 = derive(12345)
       expect(color1.lightness).to(eq(color2.lightness))
       expect(color1.chroma).to(eq(color2.chroma))
       expect(color1.hue).to(eq(color2.hue))
     end
 
     it "generates different colors for different seeds" do
-      color1 = described_class.derive(12345)
-      color2 = described_class.derive(54321)
+      color1 = derive(12345)
+      color2 = derive(54321)
       expect(color1).not_to(eq(color2))
     end
 
     it "respects custom parameters" do
-      color = described_class.derive(12345, lightness: 0.7, chroma_range: (0.20..0.30))
+      color = derive(12345, lightness: 0.7, chroma_range: (0.20..0.30))
       expect(color.lightness).to(eq(0.7))
       expect(color.chroma).to(be_between(0.20, 0.30))
     end
 
     it "raises error for non-integer seeds" do
-      expect { described_class.derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
-      expect { described_class.derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive("not_integer") }.to(raise_error(ArgumentError, "Seed must be an integer"))
+      expect { derive(3.14) }.to(raise_error(ArgumentError, "Seed must be an integer"))
     end
   end
 
   describe "#new" do
     it "creates OKLCH with valid values" do
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color = new(lightness: 0.58, chroma: 0.15, hue: 180)
       expect(color.lightness).to(eq(0.58))
       expect(color.chroma).to(eq(0.15))
       expect(color.hue).to(eq(180))
     end
 
     it "clamps lightness to 0-1" do
-      color = described_class.new(lightness: 1.5, chroma: 0.15, hue: 180)
+      color = new(lightness: 1.5, chroma: 0.15, hue: 180)
       expect(color.lightness).to(eq(1.0))
 
-      color = described_class.new(lightness: -0.5, chroma: 0.15, hue: 180)
+      color = new(lightness: -0.5, chroma: 0.15, hue: 180)
       expect(color.lightness).to(eq(0.0))
     end
 
     it "clamps chroma to 0-0.5" do
-      color = described_class.new(lightness: 0.58, chroma: 0.8, hue: 180)
+      color = new(lightness: 0.58, chroma: 0.8, hue: 180)
       expect(color.chroma).to(eq(0.5))
 
-      color = described_class.new(lightness: 0.58, chroma: -0.1, hue: 180)
+      color = new(lightness: 0.58, chroma: -0.1, hue: 180)
       expect(color.chroma).to(eq(0.0))
     end
 
     it "normalizes hue to 0-360" do
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: 450)
+      color = new(lightness: 0.58, chroma: 0.15, hue: 450)
       expect(color.hue).to(eq(90))
 
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: -90)
+      color = new(lightness: 0.58, chroma: 0.15, hue: -90)
       expect(color.hue).to(eq(270))
     end
   end
 
   describe "#to_oklch" do
     it "returns self" do
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color = new(lightness: 0.58, chroma: 0.15, hue: 180)
       expect(color.to_oklch).to(be(color))
     end
   end
 
   describe "#to_rgb" do
     it "converts to RGB instance" do
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color = new(lightness: 0.58, chroma: 0.15, hue: 180)
       rgb = color.to_rgb
       expect(rgb).to(be_a(Unmagic::Color::RGB))
     end
   end
 
   describe "color manipulation methods" do
-    let(:color) { described_class.new(lightness: 0.58, chroma: 0.15, hue: 180) }
+    let(:color) { new(lightness: 0.58, chroma: 0.15, hue: 180) }
 
     describe "#lighten" do
       it "increases lightness" do
@@ -132,7 +144,7 @@ RSpec.describe(Unmagic::Color::OKLCH) do
       end
 
       it "clamps lightness at 1.0" do
-        bright = described_class.new(lightness: 0.95, chroma: 0.15, hue: 180)
+        bright = new(lightness: 0.95, chroma: 0.15, hue: 180)
         brighter = bright.lighten(0.1)
         expect(brighter.lightness).to(eq(1.0))
       end
@@ -147,7 +159,7 @@ RSpec.describe(Unmagic::Color::OKLCH) do
       end
 
       it "clamps lightness at 0.0" do
-        dark = described_class.new(lightness: 0.05, chroma: 0.15, hue: 180)
+        dark = new(lightness: 0.05, chroma: 0.15, hue: 180)
         darker = dark.darken(0.1)
         expect(darker.lightness).to(eq(0.0))
       end
@@ -188,20 +200,20 @@ RSpec.describe(Unmagic::Color::OKLCH) do
 
   describe "#light? and #dark?" do
     it "identifies light colors" do
-      light_color = described_class.new(lightness: 0.8, chroma: 0.15, hue: 180)
+      light_color = new(lightness: 0.8, chroma: 0.15, hue: 180)
       expect(light_color).to(be_light)
       expect(light_color).not_to(be_dark)
     end
 
     it "identifies dark colors" do
-      dark_color = described_class.new(lightness: 0.3, chroma: 0.15, hue: 180)
+      dark_color = new(lightness: 0.3, chroma: 0.15, hue: 180)
       expect(dark_color).to(be_dark)
       expect(dark_color).not_to(be_light)
     end
   end
 
   describe "CSS output methods" do
-    let(:color) { described_class.new(lightness: 0.58, chroma: 0.15, hue: 180) }
+    let(:color) { new(lightness: 0.58, chroma: 0.15, hue: 180) }
 
     describe "#to_css_oklch" do
       it "outputs CSS oklch format" do
@@ -234,16 +246,16 @@ RSpec.describe(Unmagic::Color::OKLCH) do
 
   describe "#to_s" do
     it "returns CSS oklch format" do
-      color = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color = new(lightness: 0.58, chroma: 0.15, hue: 180)
       expect(color.to_s).to(eq(color.to_css_oklch))
     end
   end
 
   describe "#==" do
     it "compares OKLCH values with tolerance" do
-      color1 = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
-      color2 = described_class.new(lightness: 0.58, chroma: 0.15, hue: 180)
-      color3 = described_class.new(lightness: 0.60, chroma: 0.15, hue: 180)
+      color1 = new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color2 = new(lightness: 0.58, chroma: 0.15, hue: 180)
+      color3 = new(lightness: 0.60, chroma: 0.15, hue: 180)
 
       expect(color1).to(eq(color2))
       expect(color1).not_to(eq(color3))
@@ -253,13 +265,13 @@ RSpec.describe(Unmagic::Color::OKLCH) do
   describe "#to_ansi" do
     it "delegates to RGB#to_ansi" do
       # This will convert to approximately red
-      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
+      color = new(lightness: 0.60, chroma: 0.25, hue: 30)
       result = color.to_ansi
       expect(result).to(match(/\A(?:3[0-7]|38;2;\d+;\d+;\d+)\z/))
     end
 
     it "supports background layer" do
-      color = described_class.new(lightness: 0.60, chroma: 0.25, hue: 30)
+      color = new(lightness: 0.60, chroma: 0.25, hue: 30)
       result = color.to_ansi(layer: :background)
       expect(result).to(match(/\A(?:4[0-7]|48;2;\d+;\d+;\d+)\z/))
     end
@@ -267,7 +279,7 @@ RSpec.describe(Unmagic::Color::OKLCH) do
 
   describe "#pretty_print" do
     it "outputs standard Ruby format with colored swatch in class name" do
-      oklch = described_class.new(lightness: 0.60, chroma: 0.15, hue: 240)
+      oklch = new(lightness: 0.60, chroma: 0.15, hue: 240)
       io = StringIO.new
       PP.pp(oklch, io)
 
@@ -280,7 +292,7 @@ RSpec.describe(Unmagic::Color::OKLCH) do
     end
 
     it "formats chroma with 2 decimal places and rounds hue" do
-      oklch = described_class.new(lightness: 0.654321, chroma: 0.156789, hue: 45.7)
+      oklch = new(lightness: 0.654321, chroma: 0.156789, hue: 45.7)
       io = StringIO.new
       PP.pp(oklch, io)
 

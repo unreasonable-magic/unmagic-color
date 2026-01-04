@@ -3,85 +3,97 @@
 require "spec_helper"
 
 RSpec.describe(Unmagic::Color::RGB::Named) do
+  def parse(...)
+    Unmagic::Color::RGB::Named.parse(...)
+  end
+
+  def valid?(...)
+    Unmagic::Color::RGB::Named.valid?(...)
+  end
+
+  def find_by_name(...)
+    Unmagic::Color::RGB::Named.find_by_name(...)
+  end
+
   describe ".parse" do
     it "parses a lowercase color name" do
-      result = described_class.parse("goldenrod")
+      result = parse("goldenrod")
       expect(result).to(be_a(Unmagic::Color::RGB))
       expect(result.to_hex).to(eq("#daa520"))
     end
 
     it "parses an uppercase color name" do
-      result = described_class.parse("GOLDENROD")
+      result = parse("GOLDENROD")
       expect(result).to(be_a(Unmagic::Color::RGB))
       expect(result.to_hex).to(eq("#daa520"))
     end
 
     it "parses a mixed case color name" do
-      result = described_class.parse("GoldenRod")
+      result = parse("GoldenRod")
       expect(result).to(be_a(Unmagic::Color::RGB))
       expect(result.to_hex).to(eq("#daa520"))
     end
 
     it "parses a color name with spaces" do
-      result = described_class.parse("Golden Rod")
+      result = parse("Golden Rod")
       expect(result).to(be_a(Unmagic::Color::RGB))
       expect(result.to_hex).to(eq("#daa520"))
     end
 
     it "parses basic named colors from X11 database" do
-      expect(described_class.parse("red").to_hex).to(eq("#ff0000"))
-      expect(described_class.parse("blue").to_hex).to(eq("#0000ff"))
-      expect(described_class.parse("green").to_hex).to(eq("#00ff00")) # X11 value
+      expect(parse("red").to_hex).to(eq("#ff0000"))
+      expect(parse("blue").to_hex).to(eq("#0000ff"))
+      expect(parse("green").to_hex).to(eq("#00ff00")) # X11 value
     end
 
     it "raises ParseError for unknown color names" do
       expect do
-        described_class.parse("notacolor")
+        parse("notacolor")
       end.to(raise_error(Unmagic::Color::RGB::Named::ParseError, /Unknown color name in x11 database: "notacolor"/))
     end
   end
 
   describe ".valid?" do
     it "returns true for valid color names" do
-      expect(described_class.valid?("goldenrod")).to(be(true))
-      expect(described_class.valid?("red")).to(be(true))
-      expect(described_class.valid?("blue")).to(be(true))
+      expect(valid?("goldenrod")).to(be(true))
+      expect(valid?("red")).to(be(true))
+      expect(valid?("blue")).to(be(true))
     end
 
     it "returns true for valid names with different casing" do
-      expect(described_class.valid?("GOLDENROD")).to(be(true))
-      expect(described_class.valid?("GoldenRod")).to(be(true))
+      expect(valid?("GOLDENROD")).to(be(true))
+      expect(valid?("GoldenRod")).to(be(true))
     end
 
     it "returns true for valid names with spaces" do
-      expect(described_class.valid?("Golden Rod")).to(be(true))
+      expect(valid?("Golden Rod")).to(be(true))
     end
 
     it "returns false for invalid color names" do
-      expect(described_class.valid?("notacolor")).to(be(false))
-      expect(described_class.valid?("invalid")).to(be(false))
+      expect(valid?("notacolor")).to(be(false))
+      expect(valid?("invalid")).to(be(false))
     end
   end
 
   describe ".databases" do
     it "returns an array of database instances" do
-      databases = described_class.databases
+      databases = Unmagic::Color::RGB::Named.databases
       expect(databases).to(be_an(Array))
       expect(databases.length).to(eq(2))
     end
 
     it "includes X11 database" do
-      databases = described_class.databases
+      databases = Unmagic::Color::RGB::Named.databases
       expect(databases).to(include(Unmagic::Color::RGB::Named::X11))
     end
 
     it "includes CSS database" do
-      databases = described_class.databases
+      databases = Unmagic::Color::RGB::Named.databases
       expect(databases).to(include(Unmagic::Color::RGB::Named::CSS))
     end
 
     it "allows accessing color names from databases" do
-      x11 = described_class.databases.find { |db| db.name == "x11" }
+      x11 = Unmagic::Color::RGB::Named.databases.find { |db| db.name == "x11" }
       names = x11.all
       expect(names).to(include("goldenrod", "red", "blue", "green"))
     end
@@ -89,83 +101,83 @@ RSpec.describe(Unmagic::Color::RGB::Named) do
 
   describe "database prefixes" do
     it "parses X11 colors by default" do
-      color = described_class.parse("gray")
+      color = parse("gray")
       expect(color.to_hex).to(eq("#bebebe"))
     end
 
     it "parses CSS colors with css: prefix" do
-      color = described_class.parse("css:gray")
+      color = parse("css:gray")
       expect(color.to_hex).to(eq("#808080"))
     end
 
     it "parses CSS colors with w3c: prefix" do
-      color = described_class.parse("w3c:gray")
+      color = parse("w3c:gray")
       expect(color.to_hex).to(eq("#808080"))
     end
 
     it "parses X11 colors with x11: prefix" do
-      color = described_class.parse("x11:gray")
+      color = parse("x11:gray")
       expect(color.to_hex).to(eq("#bebebe"))
     end
 
     it "handles invalid prefix as color name" do
       expect do
-        described_class.parse("invalid:unknowncolor")
+        parse("invalid:unknowncolor")
       end.to(raise_error(Unmagic::Color::RGB::Named::ParseError, /Unknown color name in x11 database/))
     end
 
     it "handles whitespace in prefix" do
-      color = described_class.parse("css: red")
+      color = parse("css: red")
       expect(color.to_hex).to(eq("#ff0000"))
     end
 
     it "validates colors with prefix" do
-      expect(described_class.valid?("css:gray")).to(be(true))
-      expect(described_class.valid?("x11:gray")).to(be(true))
-      expect(described_class.valid?("css:notacolor")).to(be(false))
+      expect(valid?("css:gray")).to(be(true))
+      expect(valid?("x11:gray")).to(be(true))
+      expect(valid?("css:notacolor")).to(be(false))
     end
   end
 
   describe "lazy loading" do
     it "loads X11 database when accessed" do
-      described_class.parse("red")
+      parse("red")
       expect(Unmagic::Color::RGB::Named::X11.loaded?).to(be(true))
     end
 
     it "loads CSS database when accessed" do
-      described_class.parse("css:red")
+      parse("css:red")
       expect(Unmagic::Color::RGB::Named::CSS.loaded?).to(be(true))
     end
   end
 
   describe "database differences" do
     it "returns different values for gray between databases" do
-      x11_gray = described_class.parse("gray")
-      css_gray = described_class.parse("css:gray")
+      x11_gray = parse("gray")
+      css_gray = parse("css:gray")
 
       expect(x11_gray.to_hex).to(eq("#bebebe"))
       expect(css_gray.to_hex).to(eq("#808080"))
     end
 
     it "returns different values for green between databases" do
-      x11_green = described_class.parse("green")
-      css_green = described_class.parse("css:green")
+      x11_green = parse("green")
+      css_green = parse("css:green")
 
       expect(x11_green.to_hex).to(eq("#00ff00"))
       expect(css_green.to_hex).to(eq("#008000"))
     end
 
     it "returns different values for maroon between databases" do
-      x11_maroon = described_class.parse("maroon")
-      css_maroon = described_class.parse("css:maroon")
+      x11_maroon = parse("maroon")
+      css_maroon = parse("css:maroon")
 
       expect(x11_maroon.to_hex).to(eq("#b03060"))
       expect(css_maroon.to_hex).to(eq("#800000"))
     end
 
     it "returns different values for purple between databases" do
-      x11_purple = described_class.parse("purple")
-      css_purple = described_class.parse("css:purple")
+      x11_purple = parse("purple")
+      css_purple = parse("css:purple")
 
       expect(x11_purple.to_hex).to(eq("#a020f0"))
       expect(css_purple.to_hex).to(eq("#800080"))

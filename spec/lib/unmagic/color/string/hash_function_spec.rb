@@ -171,7 +171,7 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
 
     it "uses DJB2 when no color detected" do
       result = algorithim.call("random_text")
-      djb2_result = described_class::DJB2.call("random_text")
+      djb2_result = Unmagic::Color::String::HashFunction::DJB2.call("random_text")
       expect(result).to(eq(djb2_result))
     end
 
@@ -201,13 +201,13 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
     let(:algorithim) { Unmagic::Color::String::HashFunction::DEFAULT }
 
     it "uses BKDR algorithm" do
-      expect(algorithim).to(eq(described_class::BKDR))
+      expect(algorithim).to(eq(Unmagic::Color::String::HashFunction::BKDR))
     end
   end
 
   describe ".all" do
     it "returns hash of all available algorithms" do
-      algorithms = described_class.all
+      algorithms = descibed_class.all
       expect(algorithms).to(be_a(Hash))
       expect(algorithms.keys).to(include(:sum, :djb2, :bkdr, :fnv1a, :sdbm, :java, :crc32, :md5, :position, :perceptual, :color_aware, :murmur3, :default))
 
@@ -217,13 +217,13 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
 
   describe ".[]" do
     it "retrieves algorithms by name" do
-      expect(described_class[:sum]).to(eq(described_class::SUM))
-      expect(described_class["djb2"]).to(eq(described_class::DJB2))
-      expect(described_class[:BKDR]).to(eq(described_class::BKDR))
+      expect(Unmagic::Color::String::HashFunction[:sum]).to(eq(Unmagic::Color::String::HashFunction::SUM))
+      expect(Unmagic::Color::String::HashFunction["djb2"]).to(eq(Unmagic::Color::String::HashFunction::DJB2))
+      expect(Unmagic::Color::String::HashFunction[:BKDR]).to(eq(Unmagic::Color::String::HashFunction::BKDR))
     end
 
     it "raises error for unknown algorithms" do
-      expect { described_class[:unknown] }.to(raise_error(ArgumentError, "Unknown hash function: unknown"))
+      expect { Unmagic::Color::String::HashFunction[:unknown] }.to(raise_error(ArgumentError, "Unknown hash function: unknown"))
     end
   end
 
@@ -234,7 +234,7 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
       algorithms = [:sum, :djb2, :bkdr, :fnv1a, :sdbm, :java, :crc32, :md5, :position, :perceptual, :color_aware, :murmur3]
 
       algorithms.each do |algo_name|
-        algo = described_class[algo_name]
+        algo = Unmagic::Color::String::HashFunction[algo_name]
 
         test_strings.each do |str|
           result1 = algo.call(str)
@@ -249,7 +249,7 @@ RSpec.describe(Unmagic::Color::String::HashFunction) do
       results = []
 
       [:sum, :djb2, :bkdr, :fnv1a, :sdbm, :java, :crc32, :md5, :position, :perceptual, :murmur3].each do |algo_name|
-        results << described_class[algo_name].call(test_string)
+        results << Unmagic::Color::String::HashFunction[algo_name].call(test_string)
       end
 
       # At least 8 different results (allowing some collisions)
