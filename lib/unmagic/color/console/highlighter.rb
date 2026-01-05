@@ -34,13 +34,27 @@ module Unmagic
 
         # Highlight a code snippet with syntax coloring.
         #
-        # @param code [String] Ruby code to highlight
+        # Supports multi-line input. Lines starting with # are treated as comments.
+        #
+        # @param code [String] Ruby code to highlight (single or multi-line)
         # @return [String] Code with ANSI color codes
         def highlight(code)
-          # Don't highlight if already contains ANSI codes
-          return code if code.include?("\e[")
+          code.lines.map { |line| highlight_line(line.chomp) }.join("\n")
+        end
 
-          result = code
+        private
+
+        def highlight_line(line)
+          # Don't highlight if already contains ANSI codes
+          return line if line.include?("\e[")
+
+          # Treat lines starting with # as comments
+          return comment(line) if line.start_with?("#")
+
+          # Empty lines pass through
+          return line if line.empty?
+
+          result = line
 
           # Protect strings first by replacing with placeholders
           strings = []
@@ -62,6 +76,8 @@ module Unmagic
           result
         end
 
+        public
+
         # Format text as a comment.
         #
         # @param text [String] Comment text
@@ -78,6 +94,19 @@ module Unmagic
         def colorize(text, key)
           color = Color.parse(@colors[key])
           "\e[#{color.to_ansi(mode: @mode)}m#{text}\e[0m"
+        end
+
+        # Format text as a clickable hyperlink.
+        #
+        # Uses ANSI palette16 blue with underline, plus OSC 8 hyperlink
+        # sequence for iTerm2 and other modern terminals.
+        #
+        # @param url [String] The URL to link to
+        # @param text [String] The display text (defaults to url)
+        # @return [String] Styled, clickable link
+        def link(url, text = url)
+          # ANSI palette16 blue (34) + underline (4)
+          "\e[4;34m\e]8;;#{url}\a#{text}\e]8;;\a\e[0m"
         end
       end
     end

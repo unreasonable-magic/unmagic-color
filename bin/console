@@ -3,6 +3,8 @@
 
 require "bundler/setup"
 require "unmagic_color"
+require "unmagic/color/console/banner"
+require "unmagic/color/console/help"
 require "unmagic/color/console/card"
 require "unmagic/color/console/highlighter"
 require "irb"
@@ -90,79 +92,8 @@ def comment(text)
   $highlighter.comment(text)
 end
 
-# Colorize banner with an angled gradient
-def colorize_banner
-  banner_lines = [
-    "                                                              ▄▄",
-    "                                  ▀▀                          ██",
-    " ██ ██ ████▄ ███▄███▄  ▀▀█▄ ▄████ ██  ▄████       ▄████ ▄███▄ ██ ▄███▄ ████▄",
-    " ██ ██ ██ ██ ██ ██ ██ ▄█▀██ ██ ██ ██  ██    ▀▀▀▀▀ ██    ██ ██ ██ ██ ██ ██ ▀▀",
-    " ▀██▀█ ██ ██ ██ ██ ██ ▀█▄██ ▀████ ██▄ ▀████       ▀████ ▀███▀ ██ ▀███▀ ██",
-    "                               ██",
-    "                             ▀▀▀",
-  ]
-
-  # Create a gradient (45 degree angle, vibrant colors)
-  gradient = Unmagic::Color::Gradient.linear(
-    ["#ff00ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000"],
-    direction: "left to right", # Bottom-left to top-right diagonal
-  )
-
-  # Calculate dimensions
-  height = banner_lines.length
-  width = banner_lines.map(&:length).max
-
-  # Rasterize the gradient to match banner dimensions
-  bitmap = gradient.rasterize(width: width, height: height)
-
-  # Apply gradient to each character
-  banner_lines.each_with_index.map do |line, y|
-    line.chars.each_with_index.map do |char, x|
-      if char.strip.empty?
-        char # Keep whitespace as-is
-      else
-        color = bitmap.pixels[y][x]
-        "\e[#{color.to_ansi}m#{char}\e[0m"
-      end
-    end.join
-  end.join("\n")
-end
-
-puts colorize_banner
-puts "https://github.com/unmagic/unmagic-color"
-puts ""
-puts comment("# Parse colors")
-puts highlight('parse("#ff5733")')
-puts highlight("rgb(255, 87, 51)")
-puts highlight("hsl(9, 100, 60)")
-puts highlight("oklch(0.65, 0.22, 30)")
-puts highlight('parse("rebeccapurple")')
-puts ""
-puts comment("# Manipulate colors")
-puts highlight('color = parse("#ff5733")')
-puts highlight("color.lighten(0.1)")
-puts highlight("color.darken(0.1)")
-puts highlight("color.saturate(0.1)")
-puts highlight("color.desaturate(0.1)")
-puts highlight("color.rotate(30)")
-puts ""
-puts comment("# Convert between formats")
-puts highlight("color.to_rgb")
-puts highlight("color.to_hsl")
-puts highlight("color.to_oklch")
-puts highlight("color.to_hex")
-puts highlight("color.to_css_oklch")
-puts ""
-puts comment("# Create gradients")
-puts highlight('gradient(:linear, ["#FF0000", "#0000FF"]).rasterize(width: 10).pixels[0].map(&:to_hex)')
-puts ""
-puts comment("# Helpers")
-puts highlight("rgb(255, 87, 51)")
-puts highlight("hsl(9, 100, 60)")
-puts highlight("oklch(0.65, 0.22, 30)")
-puts highlight('parse("#ff5733")')
-puts highlight('gradient(:linear, ["#FF0000", "#0000FF"])')
-puts highlight("percentage(50)")
+puts Unmagic::Color::Console::Banner.new.render
+puts Unmagic::Color::Console::Help.new.render
 puts ""
 
 # Configure IRB with custom prompt
