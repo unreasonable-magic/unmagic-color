@@ -4,6 +4,8 @@
 
 A comprehensive Ruby color manipulation library with support for RGB, HSL, and OKLCH color spaces. Parse, convert, and manipulate colors with an intuitive API.
 
+We have a fancy-pants WASM based demo here: https://unreasonable-magic.github.io/unmagic-color/
+
 ## Installation
 
 Add this line to your application's Gemfile:
