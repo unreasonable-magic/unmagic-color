@@ -151,6 +151,78 @@ else
 end
 ```
 
+### Color Harmonies
+
+Generate color palettes based on color theory relationships:
+
+```ruby
+color = Unmagic::Color.parse("#FF5733")
+
+# Complementary - opposite on the color wheel (180°)
+complement = color.complementary
+# => Single color opposite on the wheel
+
+# Analogous - adjacent colors (default ±30°)
+analogous = color.analogous
+# => [color at -30°, color at +30°]
+analogous = color.analogous(angle: 15)  # Custom angle
+
+# Triadic - three colors equally spaced (120° apart)
+triadic = color.triadic
+# => [color at +120°, color at +240°]
+
+# Split Complementary - complement's neighbors (default 180° ±30°)
+split = color.split_complementary
+# => [color at 150°, color at 210°]
+split = color.split_complementary(angle: 45)  # Custom split
+
+# Tetradic Square - four colors equally spaced (90° apart)
+tetradic = color.tetradic_square
+# => [color at +90°, color at +180°, color at +270°]
+
+# Tetradic Rectangle - two complementary pairs (default 60°)
+tetradic = color.tetradic_rectangle
+# => [color at +60°, color at +180°, color at +240°]
+tetradic = color.tetradic_rectangle(angle: 30)  # Custom angle
+```
+
+### Color Variations
+
+![Variations](docs/variations.png)
+
+Generate shades, tints, tones, and monochromatic palettes:
+
+```ruby
+color = Unmagic::Color.parse("#3366CC")
+
+# Monochromatic - same hue with varying lightness
+mono = color.monochromatic(steps: 5)
+# => Array of 5 colors from dark to light
+
+# Shades - progressively darker (mixed with black)
+shades = color.shades(steps: 5)
+shades = color.shades(steps: 5, amount: 0.8)  # Darker range
+
+# Tints - progressively lighter (mixed with white)
+tints = color.tints(steps: 5)
+tints = color.tints(steps: 5, amount: 0.8)  # Lighter range
+
+# Tones - progressively desaturated (mixed with gray)
+tones = color.tones(steps: 5)
+tones = color.tones(steps: 5, amount: 0.8)  # More muted range
+```
+
+All harmony and variation methods preserve the original color space:
+
+```ruby
+hsl = Unmagic::Color::HSL.new(hue: 200, saturation: 80, lightness: 50)
+hsl.complementary        # => HSL color
+hsl.shades(steps: 3)     # => Array of HSL colors
+
+rgb = Unmagic::Color.parse("#FF5733")
+rgb.analogous            # => Array of RGB colors
+```
+
 ### HSL-Specific Features
 
 ```ruby
