@@ -4,6 +4,7 @@ require_relative "highlighter"
 
 module Unmagic
   class Color
+    # Console output utilities for rendering colors in terminals.
     module Console
       # Renders a comprehensive "profile card" for a color.
       #

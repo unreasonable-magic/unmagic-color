@@ -17,6 +17,7 @@ module Unmagic
       #   hl = Unmagic::Color::Console::Highlighter.new(colors: { string: "#00FF00" })
       #   puts hl.highlight('parse("#FF0000")')
       class Highlighter
+        # Default colors for syntax highlighting
         DEFAULT = {
           string: "#00FF00",
           number: "#FF00FF",

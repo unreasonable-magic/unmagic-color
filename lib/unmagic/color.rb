@@ -37,11 +37,15 @@ module Unmagic
   #     darker = color.darken(0.1)
   #     mixed = color.blend(other_color, 0.5)
   class Color
+    # Base error class for color-related errors.
     # @private
     class Error < StandardError; end
+
+    # Error raised when a color string cannot be parsed.
     # @private
     class ParseError < Error; end
 
+    # Path to the data directory containing color databases.
     # @api private
     DATA_PATH = File.join(__dir__, "..", "..", "data")
 
@@ -142,7 +146,10 @@ module Unmagic
         super(value: value.to_i.clamp(0, 255))
       end
 
+      # @return [Integer] Component value as integer
       def to_i = value
+
+      # @return [Float] Component value as float
       def to_f = value.to_f
 
       # @param other [Component, Numeric] Value to compare
@@ -200,7 +207,10 @@ module Unmagic
         super(value: value.to_f % 360)
       end
 
+      # @return [Float] Hue value as float
       def to_f = value
+
+      # @return [Float] Hue value in degrees
       def degrees = value
 
       # @param other [Hue, Numeric] Value to compare
