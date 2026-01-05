@@ -1,6 +1,10 @@
 inherit_gem:
   rubocop-shopify: rubocop.yml
 
+AllCops:
+  Exclude:
+    - "bin/console"
+
 plugins:
   - rubocop-rspec
   - rubocop-rake
