@@ -266,6 +266,15 @@ module Unmagic
         self
       end
 
+      # Convert to HSL color space.
+      #
+      # Converts via RGB as an intermediate step.
+      #
+      # @return [HSL] The color in HSL color space
+      def to_hsl
+        to_rgb.to_hsl
+      end
+
       # Convert to RGB color space.
       #
       # @return [RGB] The color in RGB color space (approximation)

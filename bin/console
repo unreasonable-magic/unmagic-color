@@ -3,6 +3,8 @@
 
 require "bundler/setup"
 require "unmagic_color"
+require "unmagic/color/console/card"
+require "unmagic/color/console/highlighter"
 require "irb"
 require "irb/helper_method"
 
@@ -60,32 +62,32 @@ class PercentageHelper < IRB::HelperMethod::Base
   end
 end
 
+class ShowHelper < IRB::HelperMethod::Base
+  description "Show a color profile card with color spaces, harmonies, and variations"
+
+  def execute(input)
+    puts Unmagic::Color::Console::Card.new(input).render
+    nil
+  end
+end
+
 IRB::HelperMethod.register(:rgb, RGBHelper)
 IRB::HelperMethod.register(:hsl, HSLHelper)
 IRB::HelperMethod.register(:oklch, OKLCHHelper)
 IRB::HelperMethod.register(:parse, ParseHelper)
 IRB::HelperMethod.register(:gradient, GradientHelper)
 IRB::HelperMethod.register(:percentage, PercentageHelper)
+IRB::HelperMethod.register(:show, ShowHelper)
 
-# Print welcome banner with syntax highlighting
-def colorize(text, color, mode: :truecolor)
-  "\e[#{color.to_ansi(mode: mode)}m#{text}\e[0m"
-end
+# Syntax highlighter for console output
+$highlighter = Unmagic::Color::Console::Highlighter.new
 
 def highlight(code)
-  green = Unmagic::Color["green"]
-  magenta = Unmagic::Color["#ff00ff"]
-  yellow = Unmagic::Color["yellow"]
-
-  code
-    .gsub(/(".*?")/) { colorize(Regexp.last_match(1), green, mode: :palette16) } # Strings in green
-    .gsub(/\b(\d+\.?\d*)\b/) { colorize(Regexp.last_match(1), magenta, mode: :palette16) } # Numbers in magenta
-    .gsub(/(\:[a-z_]+|[a-z_]+\:)/) { colorize(Regexp.last_match(1), yellow, mode: :palette16) } # Numbers in magenta
+  $highlighter.highlight(code)
 end
 
 def comment(text)
-  gray = Unmagic::Color["dimgray"]
-  colorize(text, gray)
+  $highlighter.comment(text)
 end
 
 # Colorize banner with an angled gradient

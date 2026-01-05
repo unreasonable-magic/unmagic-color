@@ -40,8 +40,13 @@ module Unmagic
         # Handles lazy loading, name normalization, and color lookup.
         # @api private
         class Database
+          # @return [String, nil] The name of the database
           # @api private
-          attr_reader :name, :aliases
+          attr_reader :name
+
+          # @return [Array<String>] Alternative names for the database
+          # @api private
+          attr_reader :aliases
 
           # Initialize a new color database.
           #
