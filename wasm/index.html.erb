@@ -317,6 +317,9 @@
         `;
         pendingCommands.push({ code, outputDiv: div });
       }
+
+      // Scroll input into view
+      document.getElementById("input-line").scrollIntoView({ behavior: "smooth", block: "end" });
     }
 
     document.getElementById("input").addEventListener("keydown", (e) => {

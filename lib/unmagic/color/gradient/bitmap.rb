@@ -85,6 +85,27 @@ module Unmagic
         def to_a
           @pixels.flatten
         end
+
+        # Convert to ANSI escape codes for terminal display.
+        #
+        # Renders each pixel as a colored character using 24-bit true color
+        # ANSI codes. Each row is joined and rows are separated by newlines.
+        #
+        # @param fill [String] Character to use for each pixel (default: "█")
+        # @return [String] ANSI-colored string representation
+        #
+        # @example Render a rainbow gradient
+        #   gradient = Gradient.linear(%w[red yellow green blue])
+        #   bitmap = gradient.rasterize(width: 40)
+        #   puts bitmap.to_ansi
+        #
+        # @example Use custom fill character
+        #   puts bitmap.to_ansi(fill: "▀")
+        def to_ansi(fill: "█")
+          @pixels.map do |row|
+            row.map { |color| "\e[#{color.to_ansi}m#{fill}\e[0m" }.join
+          end.join("\n")
+        end
       end
     end
   end

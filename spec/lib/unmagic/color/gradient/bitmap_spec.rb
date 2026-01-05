@@ -78,4 +78,31 @@ RSpec.describe(Unmagic::Color::Gradient::Bitmap) do
       expect(bitmap.to_a).to(eq([red, green, blue, red]))
     end
   end
+
+  describe "#to_ansi" do
+    it "renders pixels as colored block characters" do
+      bitmap = new(width: 3, height: 1, pixels: [[red, green, blue]])
+      result = bitmap.to_ansi
+      expect(result).to(include("\e[38;2;255;0;0m█\e[0m"))
+      expect(result).to(include("\e[38;2;0;255;0m█\e[0m"))
+      expect(result).to(include("\e[38;2;0;0;255m█\e[0m"))
+    end
+
+    it "supports custom fill character" do
+      bitmap = new(width: 2, height: 1, pixels: [[red, green]])
+      result = bitmap.to_ansi(fill: "▀")
+      expect(result).to(include("\e[38;2;255;0;0m▀\e[0m"))
+      expect(result).to(include("\e[38;2;0;255;0m▀\e[0m"))
+    end
+
+    it "separates rows with newlines" do
+      pixels = [
+        [red, green],
+        [blue, red],
+      ]
+      bitmap = new(width: 2, height: 2, pixels: pixels)
+      result = bitmap.to_ansi
+      expect(result.count("\n")).to(eq(1))
+    end
+  end
 end

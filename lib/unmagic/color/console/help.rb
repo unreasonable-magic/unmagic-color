@@ -17,38 +17,20 @@ module Unmagic
           link = highlighter.link("https://github.com/unreasonable-magic/unmagic-color")
 
           code = highlighter.highlight(<<~RUBY)
-            # Parse colors
+            # Parse a color (hex, rgb, hsl, oklch, ansi, css named, x11)
             parse("#ff5733")
-            rgb(255, 87, 51)
+            parse("goldenrod")
+
+            # Manually create colors
+            rgb(255, 87, 51, alpha: percentage(50))
             hsl(9, 100, 60)
             oklch(0.65, 0.22, 30)
-            parse("rebeccapurple")
 
-            # Manipulate colors
-            color = parse("#ff5733")
-            color.lighten(0.1)
-            color.darken(0.1)
-            color.saturate(0.1)
-            color.desaturate(0.1)
-            color.rotate(30)
+            # Show a color card
+            show("#ff5733")
 
-            # Convert between formats
-            color.to_rgb
-            color.to_hsl
-            color.to_oklch
-            color.to_hex
-            color.to_css_oklch
-
-            # Create gradients
-            gradient(:linear, ["#FF0000", "#0000FF"]).rasterize(width: 10).pixels[0].map(&:to_hex)
-
-            # Helpers
-            rgb(255, 87, 51)
-            hsl(9, 100, 60)
-            oklch(0.65, 0.22, 30)
-            parse("#ff5733")
-            gradient(:linear, ["#FF0000", "#0000FF"])
-            percentage(50)
+            # Make a rainbow
+            puts gradient(:linear, %w[red orange yellow green blue purple], direction: "to right").rasterize(width: 60).to_ansi
           RUBY
 
           "#{link}\n\n#{code}"
