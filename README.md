@@ -159,31 +159,22 @@ Generate color palettes based on color theory relationships:
 color = Unmagic::Color.parse("#FF5733")
 
 # Complementary - opposite on the color wheel (180°)
-complement = color.complementary
-# => Single color opposite on the wheel
+color.complementary.to_hex # => "#33daff"
 
 # Analogous - adjacent colors (default ±30°)
-analogous = color.analogous
-# => [color at -30°, color at +30°]
-analogous = color.analogous(angle: 15)  # Custom angle
+color.analogous.map(&:to_hex) # => ["#ff3374", "#ffbe33"]
 
 # Triadic - three colors equally spaced (120° apart)
-triadic = color.triadic
-# => [color at +120°, color at +240°]
+color.triadic.map(&:to_hex) # => ["#33ff58", "#5833ff"]
 
 # Split Complementary - complement's neighbors (default 180° ±30°)
-split = color.split_complementary
-# => [color at 150°, color at 210°]
-split = color.split_complementary(angle: 45)  # Custom split
+color.split_complementary.map(&:to_hex) # => ["#33ffbe", "#3374ff"]
 
 # Tetradic Square - four colors equally spaced (90° apart)
-tetradic = color.tetradic_square
-# => [color at +90°, color at +180°, color at +270°]
+color.tetradic_square.map(&:to_hex) # => ["#74ff33", "#33daff", "#be33ff"]
 
 # Tetradic Rectangle - two complementary pairs (default 60°)
-tetradic = color.tetradic_rectangle
-# => [color at +60°, color at +180°, color at +240°]
-tetradic = color.tetradic_rectangle(angle: 30)  # Custom angle
+color.tetradic_rectangle.map(&:to_hex) # => ["#daff33", "#33daff", "#5833ff"]
 ```
 
 ### Color Variations
@@ -196,8 +187,7 @@ Generate shades, tints, tones, and monochromatic palettes:
 color = Unmagic::Color.parse("#3366CC")
 
 # Monochromatic - same hue with varying lightness
-mono = color.monochromatic(steps: 5)
-# => Array of 5 colors from dark to light
+color.monochromatic(steps: 5).map(&:to_hex) # => ["#0f1f3d", "#214285", "#3366cc", "#7a9cde", "#c2d1f0"]
 
 # Shades - progressively darker (mixed with black)
 shades = color.shades(steps: 5)
@@ -216,11 +206,11 @@ All harmony and variation methods preserve the original color space:
 
 ```ruby
 hsl = Unmagic::Color::HSL.new(hue: 200, saturation: 80, lightness: 50)
-hsl.complementary        # => HSL color
-hsl.shades(steps: 3)     # => Array of HSL colors
+hsl.complementary.to_hex        # => "#e65e19"
+hsl.shades(steps: 3).map(&:to_hex) # => ["#1587bf", "#116c99", "#0d5173"]
 
 rgb = Unmagic::Color.parse("#FF5733")
-rgb.analogous            # => Array of RGB colors
+rgb.analogous.map(&:to_hex)     # => ["#ff3374", "#ffbe33"]
 ```
 
 ### HSL-Specific Features
@@ -234,11 +224,8 @@ muted = hsl.desaturate(0.3)
 shifted = hsl.adjust_hue(30)
 
 # Create color progressions
-palette = hsl.progression(
-  steps: 5,
-  lightness: [30, 50, 70, 85, 95]
-)
-# => Array of 5 HSL colors with varying lightness
+hsl.progression(steps: 5, lightness: [30, 50, 70, 85, 95]).map(&:to_hex)
+# => ["#175e82", "#269dd9", "#7dc4e8", "#bee2f4", "#e9f5fb"]
 ```
 
 ### Generating Colors from Strings
