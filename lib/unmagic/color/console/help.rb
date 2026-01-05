@@ -14,7 +14,7 @@ module Unmagic
         #
         # @return [String] The formatted help text
         def render
-          link = highlighter.link("https://github.com/unmagic/unmagic-color")
+          link = highlighter.link("https://github.com/unreasonable-magic/unmagic-color")
 
           code = highlighter.highlight(<<~RUBY)
             # Parse colors

@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+PUBLIC_DIR = File.join(__dir__, "public")
+
+directory PUBLIC_DIR
+
+namespace :build do
+  desc "Build the WASM module"
+  task wasm: PUBLIC_DIR do
+    sh "bundle install"
+    sh "bundle exec rbwasm build -o public/unmagic-color.wasm"
+  end
+
+  desc "Generate index.html with pre-computed banner and help"
+  task web: PUBLIC_DIR do
+    require "erb"
+    require "json"
+
+    # Load the gem from parent directory
+    $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+    require "unmagic_color"
+    require "unmagic/color/console/banner"
+    require "unmagic/color/console/help"
+
+    # Pre-compute the ANSI output
+    banner_ansi = Unmagic::Color::Console::Banner.new.render
+    help_ansi = Unmagic::Color::Console::Help.new.render
+
+    # Render the template
+    template_path = File.join(__dir__, "index.html.erb")
+    template = ERB.new(File.read(template_path))
+    html = template.result(binding)
+
+    # Write the output
+    output_path = File.join(PUBLIC_DIR, "index.html")
+    File.write(output_path, html)
+    puts "Generated #{output_path}"
+  end
+end
+
+desc "Build everything (WASM + HTML)"
+task build: ["build:web", "build:wasm"]
+
+desc "Start a local server to test the WASM REPL"
+task serve: PUBLIC_DIR do
+  require "webrick"
+
+  url = "http://localhost:8080"
+  server = WEBrick::HTTPServer.new(
+    Port: 8080,
+    DocumentRoot: PUBLIC_DIR,
+  )
+  trap("INT") { server.shutdown }
+
+  puts "Starting server at #{url}"
+  system("open", url)
+
+  server.start
+end
+
+desc "Clean generated files"
+task :clean do
+  rm_rf PUBLIC_DIR
+end
+
+task default: :build

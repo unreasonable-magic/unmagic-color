@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>unmagic-color REPL</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/firacode@6/distr/fira_code.css">
+  <style>
+    /* Tokyo Night color scheme */
+    :root {
+      --bg: #1a1b26;
+      --fg: #a9b1d6;
+      --comment: #565f89;
+      --string: #9ece6a;
+      --number: #ff9e64;
+      --keyword: #bb9af7;
+      --function: #7aa2f7;
+      --error: #f7768e;
+      --cyan: #7dcfff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    #terminal {
+      padding: 1rem;
+      min-height: 100vh;
+    }
+    .banner {
+      white-space: pre;
+      font-size: 12px;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .help-section {
+      white-space: pre-wrap;
+      margin: 0.5rem 0 1rem 0;
+    }
+    .output-line { margin: 0.25rem 0; }
+    .result { color: var(--function); }
+    .error { color: var(--error); }
+    .loading-indicator { color: var(--comment); font-style: italic; }
+    .color-swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    #input-line {
+      display: flex;
+      align-items: center;
+      margin: 0.25rem 0;
+    }
+    .prompt { color: var(--keyword); margin-right: 0.5rem; white-space: nowrap; }
+    #input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--fg);
+      font-family: inherit;
+      font-size: inherit;
+      outline: none;
+      caret-color: var(--function);
+    }
+    #input::placeholder { color: var(--comment); }
+    #output { margin-top: 1rem; }
+    .history-item {
+      margin: 0.25rem 0;
+    }
+    .history-input {
+      display: flex;
+      align-items: center;
+    }
+    .spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    /* Links */
+    a, a:visited { color: var(--function); }
+    /* ANSI color classes for ansi_up (Tokyo Night) */
+    .ansi-black-fg { color: #414868; }
+    .ansi-red-fg { color: #f7768e; }
+    .ansi-green-fg { color: #9ece6a; }
+    .ansi-yellow-fg { color: #e0af68; }
+    .ansi-blue-fg { color: #7aa2f7; }
+    .ansi-magenta-fg { color: #bb9af7; }
+    .ansi-cyan-fg { color: #7dcfff; }
+    .ansi-white-fg { color: #a9b1d6; }
+    .ansi-bright-black-fg { color: #565f89; }
+    .ansi-bright-red-fg { color: #f7768e; }
+    .ansi-bright-green-fg { color: #9ece6a; }
+    .ansi-bright-yellow-fg { color: #e0af68; }
+    .ansi-bright-blue-fg { color: #7aa2f7; }
+    .ansi-bright-magenta-fg { color: #bb9af7; }
+    .ansi-bright-cyan-fg { color: #7dcfff; }
+    .ansi-bright-white-fg { color: #c0caf5; }
+    .ansi-black-bg { background-color: #414868; }
+    .ansi-red-bg { background-color: #f7768e; }
+    .ansi-green-bg { background-color: #9ece6a; }
+    .ansi-yellow-bg { background-color: #e0af68; }
+    .ansi-blue-bg { background-color: #7aa2f7; }
+    .ansi-magenta-bg { background-color: #bb9af7; }
+    .ansi-cyan-bg { background-color: #7dcfff; }
+    .ansi-white-bg { background-color: #a9b1d6; }
+    /* Color card styling */
+    .color-card {
+      white-space: pre;
+      line-height: 1.2;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal">
+    <div id="banner" class="banner"></div>
+    <div id="help" class="help-section"></div>
+
+    <div id="output"></div>
+
+    <div id="input-line">
+      <span class="prompt">unmagic-color&gt;</span>
+      <input type="text" id="input" placeholder="Enter Ruby code..." autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <script type="module">
+    import { AnsiUp } from "https://cdn.jsdelivr.net/npm/ansi_up@6.0.2/ansi_up.min.js";
+    import { DefaultRubyVM } from "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.8.1/dist/browser/+esm";
+
+    // Pre-computed ANSI output - render immediately
+    const BANNER_ANSI = <%= banner_ansi.to_json %>;
+    const HELP_ANSI = <%= help_ansi.to_json %>;
+    const ansi_up = new AnsiUp();
+    ansi_up.use_classes = true;
+    document.getElementById("banner").innerHTML = ansi_up.ansi_to_html(BANNER_ANSI);
+    document.getElementById("help").innerHTML = ansi_up.ansi_to_html(HELP_ANSI);
+
+    let vm = null;
+    let vmReady = false;
+    let vmError = null;
+    const pendingCommands = [];
+
+    // Load history from localStorage
+    const HISTORY_KEY = "unmagic-color-history";
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    let historyIndex = history.length;
+
+    function saveHistory() {
+      // Keep last 100 commands
+      const toSave = history.slice(-100);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(toSave));
+    }
+
+    // Load WASM in background
+    async function initRuby() {
+      try {
+        const response = await fetch("./unmagic-color.wasm");
+        if (!response.ok) throw new Error(`Failed to load WASM: ${response.status}`);
+
+        const module = await WebAssembly.compileStreaming(response);
+        const result = await DefaultRubyVM(module);
+        vm = result.vm;
+
+        // Initialize the gem with helper methods
+        vm.eval(`
+          require "/bundle/setup"
+          require "unmagic_color"
+
+          def rgb(*args, **kwargs)
+            Unmagic::Color::RGB.build(*args, **kwargs)
+          end
+
+          def hsl(*args, **kwargs)
+            Unmagic::Color::HSL.build(*args, **kwargs)
+          end
+
+          def oklch(*args, **kwargs)
+            Unmagic::Color::OKLCH.build(*args, **kwargs)
+          end
+
+          def parse(*args, **kwargs)
+            Unmagic::Color[*args, **kwargs]
+          end
+
+          def gradient(type = :linear, colors, **kwargs)
+            case type
+            when :linear
+              Unmagic::Color::Gradient.linear(colors, **kwargs)
+            else
+              raise ArgumentError, "Unknown gradient type: \#{type}"
+            end
+          end
+
+          def percentage(*args, **kwargs)
+            Unmagic::Util::Percentage.build(*args, **kwargs)
+          end
+
+          require "unmagic/color/console/card"
+
+          def show(color)
+            Unmagic::Color::Console::Card.new(color).render
+          end
+
+          class String
+            def to_color
+              Unmagic::Color[self]
+            end
+
+            def method_missing(method, *args, **kwargs, &block)
+              if Unmagic::Color::RGB.method_defined?(method) || Unmagic::Color::HSL.method_defined?(method) || Unmagic::Color::OKLCH.method_defined?(method)
+                to_color.send(method, *args, **kwargs, &block)
+              else
+                super
+              end
+            end
+
+            def respond_to_missing?(method, include_private = false)
+              Unmagic::Color::RGB.method_defined?(method) || Unmagic::Color::HSL.method_defined?(method) || Unmagic::Color::OKLCH.method_defined?(method) || super
+            end
+          end
+        `);
+
+        vmReady = true;
+
+        // Process any commands that were entered while loading
+        for (const { code, outputDiv } of pendingCommands) {
+          executeRuby(code, outputDiv);
+        }
+        pendingCommands.length = 0;
+
+      } catch (error) {
+        vmError = error;
+        console.error("Failed to load Ruby WASM:", error);
+
+        // Update any pending commands with the error
+        for (const { outputDiv } of pendingCommands) {
+          outputDiv.querySelector(".loading-indicator").innerHTML =
+            `<span class="error">Failed to load: ${escapeHtml(error.message)}</span>`;
+        }
+      }
+    }
+
+    function extractHexColor(text) {
+      const hexMatch = text.match(/#[0-9a-fA-F]{6,8}/);
+      return hexMatch ? hexMatch[0] : null;
+    }
+
+    function formatResult(result) {
+      const text = result.toString();
+      const isMultiLine = text.includes("\n");
+      const rendered = ansi_up.ansi_to_html(text);
+
+      if (isMultiLine) {
+        return `<div class="color-card">${rendered}</div>`;
+      }
+
+      const hex = extractHexColor(text);
+      let html = `<span class="result">=&gt; ${rendered}</span>`;
+      if (hex) {
+        html = `<span class="color-swatch" style="background:${hex};"></span>` + html;
+      }
+      return html;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function executeRuby(code, outputDiv) {
+      try {
+        const result = vm.eval(code);
+        outputDiv.innerHTML = `
+          <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
+          <div class="output-line">${formatResult(result)}</div>
+        `;
+      } catch (error) {
+        outputDiv.innerHTML = `
+          <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
+          <div class="error">${escapeHtml(error.message)}</div>
+        `;
+      }
+    }
+
+    function handleCommand(code) {
+      const output = document.getElementById("output");
+      const div = document.createElement("div");
+      div.className = "history-item";
+      output.appendChild(div);
+
+      if (vmReady) {
+        executeRuby(code, div);
+      } else if (vmError) {
+        div.innerHTML = `
+          <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
+          <div class="error">Ruby failed to load: ${escapeHtml(vmError.message)}</div>
+        `;
+      } else {
+        // Still loading - show indicator and queue the command
+        div.innerHTML = `
+          <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
+          <div class="loading-indicator"><span class="spinner">◐</span> Loading Ruby...</div>
+        `;
+        pendingCommands.push({ code, outputDiv: div });
+      }
+    }
+
+    document.getElementById("input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const input = e.target.value.trim();
+        if (input) {
+          history.push(input);
+          historyIndex = history.length;
+          saveHistory();
+          handleCommand(input);
+          e.target.value = "";
+        }
+      } else if (e.key === "ArrowUp") {
+        if (historyIndex > 0) {
+          historyIndex--;
+          e.target.value = history[historyIndex];
+          e.preventDefault();
+        }
+      } else if (e.key === "ArrowDown") {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          e.target.value = history[historyIndex];
+        } else {
+          historyIndex = history.length;
+          e.target.value = "";
+        }
+        e.preventDefault();
+      }
+    });
+
+    // Focus input when user starts typing
+    document.addEventListener("keydown", (e) => {
+      const input = document.getElementById("input");
+      if (document.activeElement === input) return;
+
+      // Focus on printable characters, arrows, or paste
+      const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.metaKey;
+      const isArrow = e.key === "ArrowUp" || e.key === "ArrowDown";
+      const isPaste = (e.ctrlKey || e.metaKey) && e.key === "v";
+
+      if (isPrintable || isArrow || isPaste) {
+        input.focus();
+      }
+    });
+
+    // Start loading WASM in background
+    initRuby();
+  </script>
+</body>
+</html>

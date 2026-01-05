@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+# Gemfile for building unmagic-color as a WebAssembly module.
+#
+# Usage:
+#   cd wasm
+#   rake          # builds everything to public/
+#   rake serve    # serves public/ on http://localhost:8080
+
+source "https://rubygems.org"
+
+# The js gem provides JavaScript interoperability in the browser
+gem "js", "~> 2.7"
+
+# ruby_wasm provides the rbwasm build toolchain
+gem "ruby_wasm", "~> 2.8"
+
+# Include the gem itself from the parent directory
+gem "unmagic-color", path: ".."
+
+# For web server
+gem "webrick"

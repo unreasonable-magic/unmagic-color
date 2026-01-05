@@ -3,6 +3,7 @@ inherit_gem:
 
 AllCops:
   Exclude:
+    - "wasm/**/*"
     - "bin/console"
 
 plugins:

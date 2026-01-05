@@ -4,3 +4,10 @@ doc
 .claude
 pkg
 tmp/
+
+# WASM build artifacts
+wasm/public/
+wasm/build/
+wasm/rubies/
+wasm/Gemfile.lock
+wasm/*.wasm

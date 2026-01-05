@@ -1,0 +1,9 @@
+[settings]
+idiomatic_version_file = true
+
+[tools]
+ruby = "3.4"
+rust = "latest"
+
+[env]
+SSL_CERT_FILE = "/etc/ssl/cert.pem"
