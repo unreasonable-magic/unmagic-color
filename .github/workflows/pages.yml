@@ -27,7 +27,7 @@ jobs:
           bundler-cache: true
 
       - name: Set up Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install WASM dependencies
         working-directory: wasm
