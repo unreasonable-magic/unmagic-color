@@ -291,6 +291,15 @@ module Unmagic
         to_rgb.to_oklch
       end
 
+      # Convert to hex string.
+      #
+      # Converts via RGB as an intermediate step.
+      #
+      # @return [String] The color as a hex string (e.g., "#ff5733")
+      def to_hex
+        to_rgb.to_hex
+      end
+
       # Calculate the relative luminance.
       #
       # Converts to RGB first, then calculates luminance.

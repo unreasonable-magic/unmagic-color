@@ -166,6 +166,19 @@ RSpec.describe(Unmagic::Color::HSL) do
     end
   end
 
+  describe "#to_hex" do
+    it "converts to hex via RGB" do
+      color = new(hue: 0, saturation: 100, lightness: 50)
+      expect(color.to_hex).to(eq("#ff0000"))
+    end
+
+    it "handles various colors" do
+      expect(new(hue: 120, saturation: 100, lightness: 50).to_hex).to(eq("#00ff00"))
+      expect(new(hue: 240, saturation: 100, lightness: 50).to_hex).to(eq("#0000ff"))
+      expect(new(hue: 0, saturation: 0, lightness: 50).to_hex).to(eq("#808080"))
+    end
+  end
+
   describe "methods" do
     it "has expected methods" do
       color = new(hue: 180, saturation: 50, lightness: 50)

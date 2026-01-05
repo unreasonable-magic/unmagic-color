@@ -132,6 +132,19 @@ RSpec.describe(Unmagic::Color::OKLCH) do
     end
   end
 
+  describe "#to_hex" do
+    it "converts to hex via RGB" do
+      color = new(lightness: 0.58, chroma: 0.15, hue: 180)
+      hex = color.to_hex
+      expect(hex).to(match(/\A#[0-9a-f]{6}\z/))
+    end
+
+    it "returns consistent hex strings" do
+      color = new(lightness: 0.50, chroma: 0.10, hue: 0)
+      expect(color.to_hex).to(eq(color.to_rgb.to_hex))
+    end
+  end
+
   describe "color manipulation methods" do
     let(:color) { new(lightness: 0.58, chroma: 0.15, hue: 180) }
 

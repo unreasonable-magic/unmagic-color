@@ -302,6 +302,15 @@ module Unmagic
         Unmagic::Color::RGB.new(red: r, green: g, blue: b, alpha: @alpha)
       end
 
+      # Convert to hex string.
+      #
+      # Converts via RGB as an intermediate step.
+      #
+      # @return [String] The color as a hex string (e.g., "#ff5733")
+      def to_hex
+        to_rgb.to_hex
+      end
+
       # Calculate the relative luminance.
       #
       # In OKLCH, the lightness value directly represents perceptual luminance,
