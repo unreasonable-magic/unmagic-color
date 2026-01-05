@@ -62,6 +62,9 @@ module Unmagic
     require_relative "color/rgb/gradient/linear"
     require_relative "color/hsl/gradient/linear"
     require_relative "color/oklch/gradient/linear"
+    require_relative "color/harmony"
+
+    include Harmony
 
     class << self
       # Parse a color string into the appropriate color space object.
