@@ -83,8 +83,8 @@ module Unmagic
           hsl = @color.to_hsl
           oklch = @color.to_oklch
 
-          left_width = 40  # Same as variation blocks
-          swatch_width = WIDTH - left_width - 2  # -2 for space before row end and right margin
+          left_width = 40 # Same as variation blocks
+          swatch_width = WIDTH - left_width - 2 # -2 for space before row end and right margin
 
           color_block = swatch(@color, width: swatch_width)
 
@@ -136,7 +136,7 @@ module Unmagic
 
           # Calculate left column width for alignment (same as header)
           left_width = 40
-          total_swatch_width = WIDTH - left_width - 2  # -2 for space and right margin
+          total_swatch_width = WIDTH - left_width - 2 # -2 for space and right margin
 
           # Auto-balance swatch widths based on number of colors
           swatch_width = total_swatch_width / colors_array.length

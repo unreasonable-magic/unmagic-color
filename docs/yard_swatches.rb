@@ -6,7 +6,7 @@ require "yard"
 require "redcarpet"
 
 module YardSwatches
-  HEX_RE = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/
+  HEX_RE = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/.freeze
 
   class Renderer < Redcarpet::Render::HTML
     # Use postprocess to add swatches outside of code blocks

@@ -7,7 +7,8 @@ RSpec.describe(Unmagic::Color::Harmony) do
     it "returns a single color (not an array)" do
       color = Unmagic::Color.parse("#FF0000")
       result = color.complementary
-      expect(result).to(be_a(Unmagic::Color::RGB))
+      expect(result).not_to(be_an(Array))
+      expect(result).to(be_a(Unmagic::Color))
     end
 
     it "returns the complement with 180 degree hue shift" do

@@ -161,7 +161,7 @@ module Unmagic
             hue: hsl.hue.value,
             saturation: hsl.saturation.value,
             lightness: lightness,
-            alpha: hsl.alpha.value
+            alpha: hsl.alpha.value,
           )
           convert_harmony_result(result)
         end
@@ -192,7 +192,7 @@ module Unmagic
             hue: hsl.hue.value,
             saturation: hsl.saturation.value,
             lightness: new_lightness.clamp(0, 100),
-            alpha: hsl.alpha.value
+            alpha: hsl.alpha.value,
           )
           convert_harmony_result(result)
         end
@@ -223,7 +223,7 @@ module Unmagic
             hue: hsl.hue.value,
             saturation: hsl.saturation.value,
             lightness: new_lightness.clamp(0, 100),
-            alpha: hsl.alpha.value
+            alpha: hsl.alpha.value,
           )
           convert_harmony_result(result)
         end
@@ -254,7 +254,7 @@ module Unmagic
             hue: hsl.hue.value,
             saturation: new_saturation.clamp(0, 100),
             lightness: hsl.lightness.value,
-            alpha: hsl.alpha.value
+            alpha: hsl.alpha.value,
           )
           convert_harmony_result(result)
         end
@@ -272,7 +272,7 @@ module Unmagic
           hue: hsl.hue.value + degrees,
           saturation: hsl.saturation.value,
           lightness: hsl.lightness.value,
-          alpha: hsl.alpha.value
+          alpha: hsl.alpha.value,
         )
         convert_harmony_result(result)
       end
