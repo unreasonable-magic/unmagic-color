@@ -12,11 +12,14 @@ source "https://rubygems.org"
 # The js gem provides JavaScript interoperability in the browser
 gem "js", "~> 2.7"
 
-# ruby_wasm provides the rbwasm build toolchain
-gem "ruby_wasm", "~> 2.8"
-
 # Include the gem itself from the parent directory
 gem "unmagic-color", path: ".."
 
-# For web server
-gem "webrick"
+# Build toolchain
+gem "ruby_wasm", "~> 2.8"
+
+# Development tools - not included in WASM bundle
+group :development do
+  gem "openssl"
+  gem "webrick"
+end

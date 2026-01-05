@@ -11,3 +11,4 @@ wasm/build/
 wasm/rubies/
 wasm/Gemfile.lock
 wasm/*.wasm
+wasm/.bundle

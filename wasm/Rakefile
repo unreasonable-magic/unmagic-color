@@ -8,7 +8,8 @@ namespace :build do
   desc "Build the WASM module"
   task wasm: PUBLIC_DIR do
     sh "bundle install"
-    sh "bundle exec rbwasm build -o public/unmagic-color.wasm"
+    # Exclude development group (openssl, webrick) from WASM bundle
+    sh "BUNDLE_WITHOUT=development bundle exec rbwasm build -o public/unmagic-color.wasm"
   end
 
   desc "Generate index.html with pre-computed banner and help"
@@ -61,6 +62,10 @@ end
 desc "Clean generated files"
 task :clean do
   rm_rf PUBLIC_DIR
+  rm_rf "rubies"
+  rm_rf "build"
+  rm_f "unmagic-color.wasm"
+  rm_f "Gemfile.lock"
 end
 
 task default: :build

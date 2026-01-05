@@ -214,6 +214,18 @@
             Unmagic::Color::Console::Card.new(color).render
           end
 
+          require "stringio"
+          require "json"
+
+          def __capture_output__(code)
+            old_stdout = $stdout
+            $stdout = StringIO.new
+            result = eval(code) # rubocop:disable Security/Eval
+            stdout = $stdout.string
+            $stdout = old_stdout
+            { stdout: stdout, result: result.inspect }.to_json
+          end
+
           class String
             def to_color
               Unmagic::Color[self]
@@ -283,11 +295,36 @@
 
     function executeRuby(code, outputDiv) {
       try {
-        const result = vm.eval(code);
-        outputDiv.innerHTML = `
-          <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
-          <div class="output-line">${formatResult(result)}</div>
-        `;
+        // Escape the code for Ruby string
+        const escapedCode = code.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const wrapped = `__capture_output__('${escapedCode}')`;
+        const json = vm.eval(wrapped).toString();
+        const output = JSON.parse(json);
+
+        const stdout = output.stdout;
+        const result = output.result;
+
+        let html = `<div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>`;
+
+        // Show stdout if any (rendered through ansi_up)
+        if (stdout && stdout.length > 0) {
+          const isMultiLine = stdout.includes("\n");
+          const rendered = ansi_up.ansi_to_html(stdout.trimEnd());
+          if (isMultiLine) {
+            html += `<div class="color-card">${rendered}</div>`;
+          } else {
+            html += `<div class="output-line">${rendered}</div>`;
+          }
+        }
+
+        // Show return value (skip nil if there was stdout)
+        if (!(stdout && stdout.length > 0 && result === "nil")) {
+          const hex = extractHexColor(result);
+          const swatch = hex ? `<span class="color-swatch" style="background:${hex};"></span>` : "";
+          html += `<div class="output-line">${swatch}<span class="result">=&gt; ${escapeHtml(result)}</span></div>`;
+        }
+
+        outputDiv.innerHTML = html;
       } catch (error) {
         outputDiv.innerHTML = `
           <div class="history-input"><span class="prompt">unmagic-color&gt;</span> ${escapeHtml(code)}</div>
