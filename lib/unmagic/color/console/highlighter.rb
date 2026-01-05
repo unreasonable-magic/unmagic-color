@@ -5,7 +5,7 @@ module Unmagic
     module Console
       # Simple syntax highlighter for Ruby code snippets.
       #
-      # Highlights strings, numbers, symbols, method calls, and comments
+      # Highlights strings, numbers, symbols, and comments
       # using ANSI color codes.
       #
       # @example Basic usage
@@ -13,13 +13,22 @@ module Unmagic
       #   puts hl.highlight('color.to_rgb.to_s')
       #   puts hl.comment('# This is a comment')
       #
-      # @example With custom mode
-      #   hl = Unmagic::Color::Console::Highlighter.new(mode: :palette16)
+      # @example With custom colors
+      #   hl = Unmagic::Color::Console::Highlighter.new(colors: { string: "#00FF00" })
       #   puts hl.highlight('parse("#FF0000")')
       class Highlighter
+        DEFAULT = {
+          string: "#00FF00",
+          number: "#FF00FF",
+          symbol: "#FFFF00",
+          comment: "#696969",
+        }.freeze
+
         # @param mode [Symbol] ANSI color mode (:truecolor, :palette256, :palette16)
-        def initialize(mode: :palette16)
+        # @param colors [Hash] Color overrides (keys: :string, :number, :symbol, :comment)
+        def initialize(mode: :palette16, colors: DEFAULT)
           @mode = mode
+          @colors = DEFAULT.merge(colors)
         end
 
         # Highlight a code snippet with syntax coloring.
@@ -41,13 +50,12 @@ module Unmagic
 
           # Now highlight other elements (won't match inside strings)
           result = result
-            .gsub(/\b(\d+\.?\d*%?)/) { colorize(Regexp.last_match(1), number_color) }
-            .gsub(/(:[a-z_]+|[a-z_]+:)/) { colorize(Regexp.last_match(1), symbol_color) }
-            .gsub(/(\.[a-z_]+)/) { colorize(Regexp.last_match(1), method_color) }
+            .gsub(/\b(\d+\.?\d*%?)/) { colorize(Regexp.last_match(1), :number) }
+            .gsub(/(:[a-z_]+|[a-z_]+:)/) { colorize(Regexp.last_match(1), :symbol) }
 
           # Restore and highlight strings
           strings.each_with_index do |str, i|
-            result = result.gsub("\x00STRING#{i}\x00", colorize(str, string_color))
+            result = result.gsub("\x00STRING#{i}\x00", colorize(str, :string))
           end
 
           result
@@ -58,42 +66,17 @@ module Unmagic
         # @param text [String] Comment text
         # @return [String] Gray-colored text
         def comment(text)
-          colorize(text, comment_color)
+          colorize(text, :comment)
         end
 
         # Colorize text with a specific color.
         #
         # @param text [String] Text to colorize
-        # @param color [Color] Color to use
+        # @param key [Symbol] Color key from the colors hash
         # @return [String] Text with ANSI color codes
-        def colorize(text, color)
+        def colorize(text, key)
+          color = Color.parse(@colors[key])
           "\e[#{color.to_ansi(mode: @mode)}m#{text}\e[0m"
-        end
-
-        private
-
-        def string_color
-          @string_color ||= Color.parse("green")
-        end
-
-        def number_color
-          @number_color ||= Color.parse("#ff00ff")
-        end
-
-        def symbol_color
-          @symbol_color ||= Color.parse("yellow")
-        end
-
-        def method_color
-          @method_color ||= Color.parse("cyan")
-        end
-
-        def comment_color
-          @comment_color ||= Color.parse("dimgray")
-        end
-
-        def result_color
-          @result_color ||= Color.parse("gray")
         end
       end
     end
