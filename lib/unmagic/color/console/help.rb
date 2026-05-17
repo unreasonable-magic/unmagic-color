@@ -31,6 +31,9 @@ module Unmagic
 
             # Make a rainbow
             puts gradient(:linear, %w[red orange yellow green blue purple], direction: "to right").rasterize(width: 60).to_ansi
+
+            # Generate Tailwind color scales
+            puts gradient(:linear, parse("#3b82f6").scale(steps: 11, anchor: 5), direction: "to right").rasterize(width: 60).to_ansi
           RUBY
 
           "#{link}\n\n#{code}"

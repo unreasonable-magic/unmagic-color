@@ -5,8 +5,9 @@ module Unmagic
     # Color harmony and variations module.
     #
     # Provides methods for generating harmonious color palettes based on
-    # color theory principles. All calculations are performed in HSL color space
-    # for accurate hue-based relationships.
+    # color theory principles. Harmony and the {#shades}/{#tints}/{#tones}
+    # variations are computed in HSL color space for accurate hue-based
+    # relationships; {#scale} is computed in OKLCH for perceptual uniformity.
     #
     # Included in the base Color class, making these methods available to
     # RGB, HSL, and OKLCH color spaces via inheritance.
@@ -40,6 +41,25 @@ module Unmagic
     #   blue.shades(steps: 3)      # => [darker1, darker2, darker3]
     #   blue.tints(steps: 3)       # => [lighter1, lighter2, lighter3]
     module Harmony
+      # Default lightness curve for {#scale}: 11 control points describing the
+      # *shape* of the light→dark sweep (1.0 = lightest, 0.0 = darkest), sampled
+      # with linear interpolation. Derived from the average of several
+      # hand-tuned production color ramps.
+      SCALE_LIGHTNESS_SHAPE = [
+        1.0, 0.948, 0.876, 0.769, 0.622, 0.514, 0.416, 0.323, 0.234, 0.168, 0.0,
+      ].freeze
+
+      # Default chroma curve for {#scale}: 11 control points (peak normalized
+      # to 1.0). Chroma rises into the mid-tones and tapers toward both ends —
+      # a constant chroma reads as muddy near white and neon near black, and
+      # the sRGB gamut itself narrows at the extremes.
+      SCALE_CHROMA_CURVE = [
+        0.055, 0.131, 0.247, 0.447, 0.727, 0.920, 1.0, 0.931, 0.767, 0.586, 0.374,
+      ].freeze
+
+      # Default lightness endpoints `[lightest, darkest]` for {#scale}.
+      SCALE_LIGHTNESS_DEFAULT = [0.971, 0.270].freeze
+
       # Returns the complementary color (180° opposite on the color wheel).
       #
       # Complementary colors create high contrast and visual tension.
@@ -260,7 +280,173 @@ module Unmagic
         end
       end
 
+      # Generate a perceptually-uniform tonal scale from this color.
+      #
+      # Produces an ordered sequence of colors from light to dark, computed in
+      # the OKLCH color space so each step sits an even perceptual distance
+      # from the last. Unlike {#shades}/{#tints} (which blend toward black or
+      # white in HSL), `scale` controls lightness, chroma, and hue
+      # independently and gamut-maps every result.
+      #
+      # The chroma curve is the important part: chroma rises into the
+      # mid-tones and tapers toward both ends, because a constant chroma reads
+      # as muddy near white and as neon near black, and because the sRGB gamut
+      # itself narrows at the extremes.
+      #
+      # This is a general-purpose primitive. An 11-step scale anchored in the
+      # middle happens to produce a Tailwind-style 50–950 palette, but the
+      # method itself knows nothing about Tailwind.
+      #
+      # @param steps [Integer] Number of colors to generate (must be at least 2)
+      # @param lightness [Range, Array<Numeric>, Proc, nil] OKLCH lightness
+      #   control. A `Range` gives the light/dark endpoints; an `Array` gives
+      #   an explicit value per step; a `Proc` is called with `(t, index)`;
+      #   `nil` uses the default curve.
+      # @param chroma [Symbol, Array<Numeric>, Proc] OKLCH chroma control.
+      #   `:peak` (default) applies the tapered curve scaled to this color's
+      #   chroma; `:flat` holds chroma constant; an `Array` or `Proc` supplies
+      #   values directly.
+      # @param hue_shift [Range, Numeric, Proc, nil] Hue drift in degrees
+      #   across the scale. `nil` (default) keeps the hue constant.
+      # @param anchor [Integer, nil] Index at which this color is placed
+      #   exactly — its lightness, chroma, and hue are preserved at that step
+      #   and the rest of the scale is built around it.
+      # @param gamut [Symbol] `:srgb` (default) gamut-maps every result into
+      #   sRGB so {RGB#to_hex} is trustworthy; `:none` returns the raw OKLCH
+      #   colors, which may be wider than sRGB.
+      # @return [Array<OKLCH>] `steps` colors in OKLCH, ordered light to dark
+      # @raise [ArgumentError] If steps < 2, anchor is out of range, or gamut
+      #   is not :srgb or :none
+      #
+      # @example An 11-step palette anchored on the base color
+      #   base = Unmagic::Color.parse("oklch(0.62 0.21 260)")
+      #   palette = base.scale(steps: 11, anchor: 5)
+      #
+      # @example Label an 11-step scale as Tailwind stops
+      #   stops = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
+      #   tailwind = stops.zip(base.scale(steps: 11, anchor: 5)).to_h
+      def scale(steps: 11, lightness: nil, chroma: :peak, hue_shift: nil, anchor: nil, gamut: :srgb)
+        raise ArgumentError, "steps must be at least 2" if steps < 2
+        if anchor && !(0...steps).cover?(anchor)
+          raise ArgumentError, "anchor must be between 0 and #{steps - 1}"
+        end
+        unless [:srgb, :none].include?(gamut)
+          raise ArgumentError, "gamut must be :srgb or :none"
+        end
+
+        base = to_oklch
+        positions = Array.new(steps) { |i| i.fdiv(steps - 1) }
+
+        lightnesses = scale_lightness(positions, lightness, anchor, base.lightness)
+        chromas = scale_chroma(positions, chroma, anchor, base.chroma.value)
+        hues = scale_hue(positions, hue_shift, base.hue.value)
+
+        Array.new(steps) do |i|
+          color = OKLCH.new(
+            lightness: lightnesses[i].clamp(0.0, 1.0),
+            chroma: [chromas[i], 0.0].max,
+            hue: hues[i],
+            alpha: base.alpha.value,
+          )
+          gamut == :none ? color : color.clamp_to_gamut
+        end
+      end
+
       private
+
+      # Compute the OKLCH lightness for each step of a {#scale}.
+      #
+      # @return [Array<Float>] One lightness ratio (0.0-1.0) per step
+      def scale_lightness(positions, lightness, anchor, base_lightness)
+        case lightness
+        when Array
+          positions.each_index.map { |i| lightness[i] || lightness.last }
+        when Proc
+          positions.each_index.map { |i| lightness.call(positions[i], i) }
+        else
+          light, dark = if lightness.is_a?(Range)
+            [lightness.begin.to_f, lightness.end.to_f]
+          else
+            SCALE_LIGHTNESS_DEFAULT
+          end
+          shape = positions.map { |t| interpolate_curve(SCALE_LIGHTNESS_SHAPE, t) }
+          return shape.map { |s| dark + (light - dark) * s } unless anchor
+
+          warp_lightness_to_anchor(shape, shape[anchor], base_lightness, light, dark)
+        end
+      end
+
+      # Warp the lightness shape so it passes exactly through the base color's
+      # lightness at the anchor, keeping the curve monotonic and pinned to the
+      # light/dark endpoints. The light and dark halves are scaled separately.
+      #
+      # @return [Array<Float>] One lightness ratio per step
+      def warp_lightness_to_anchor(shape, anchor_shape, base_lightness, light, dark)
+        shape.map do |s|
+          if s >= anchor_shape
+            next base_lightness if anchor_shape >= 1.0
+
+            base_lightness + (light - base_lightness) * (s - anchor_shape) / (1.0 - anchor_shape)
+          else
+            next base_lightness unless anchor_shape.positive?
+
+            dark + (base_lightness - dark) * s / anchor_shape
+          end
+        end
+      end
+
+      # Compute the OKLCH chroma for each step of a {#scale}.
+      #
+      # @return [Array<Float>] One chroma value per step
+      def scale_chroma(positions, chroma, anchor, base_chroma)
+        case chroma
+        when :flat
+          positions.map { base_chroma }
+        when Array
+          positions.each_index.map { |i| chroma[i] || chroma.last }
+        when Proc
+          positions.each_index.map { |i| chroma.call(positions[i], i) }
+        when :peak, nil
+          curve = positions.map { |t| interpolate_curve(SCALE_CHROMA_CURVE, t) }
+          reference = anchor ? curve[anchor] : curve.max
+          factor = reference.zero? ? 0.0 : base_chroma / reference
+          curve.map { |c| c * factor }
+        else
+          raise ArgumentError, "chroma must be :peak, :flat, an Array, or a Proc"
+        end
+      end
+
+      # Compute the OKLCH hue for each step of a {#scale}.
+      #
+      # @return [Array<Float>] One hue value (degrees) per step
+      def scale_hue(positions, hue_shift, base_hue)
+        case hue_shift
+        when nil
+          positions.map { base_hue }
+        when Range
+          from = hue_shift.begin.to_f
+          to = hue_shift.end.to_f
+          positions.map { |t| base_hue + from + (to - from) * t }
+        when Numeric
+          positions.map { |t| base_hue + (hue_shift * t) }
+        when Proc
+          positions.each_index.map { |i| base_hue + hue_shift.call(positions[i], i) }
+        else
+          raise ArgumentError, "hue_shift must be nil, a Range, Numeric, or a Proc"
+        end
+      end
+
+      # Sample an evenly-spaced control-point array at position `t` (0.0-1.0),
+      # linearly interpolating between the two nearest points.
+      #
+      # @return [Float] The interpolated value
+      def interpolate_curve(control, t)
+        t = t.clamp(0.0, 1.0)
+        x = t * (control.length - 1)
+        low = x.floor
+        high = [low + 1, control.length - 1].min
+        control[low] + (control[high] - control[low]) * (x - low)
+      end
 
       # Rotate the hue by the specified degrees and return a new color.
       #

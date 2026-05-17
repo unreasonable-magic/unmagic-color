@@ -275,31 +275,82 @@ module Unmagic
         to_rgb.to_hsl
       end
 
+      # Convert to the OKLab color space as `[lightness, a, b]`.
+      #
+      # OKLab is the cartesian form of OKLCH: `a` is the green–red axis and
+      # `b` is the blue–yellow axis. The Euclidean distance between two OKLab
+      # triples is a perceptual color difference (ΔE).
+      #
+      # @return [Array<Float>] The `[L, a, b]` OKLab coordinates
+      #
+      # @example
+      #   color = OKLCH.new(lightness: 0.65, chroma: 0.15, hue: 240)
+      #   l, a, b = color.to_oklab
+      def to_oklab
+        h_rad = @hue.value * Math::PI / 180.0
+        c = @chroma.value
+        [@lightness.to_ratio, c * Math.cos(h_rad), c * Math.sin(h_rad)]
+      end
+
       # Convert to RGB color space.
       #
-      # @return [RGB] The color in RGB color space (approximation)
-      # @note This is currently a simplified approximation. A proper OKLCH to sRGB
-      #   conversion requires more complex color science calculations.
+      # Uses the full OKLab color-science pipeline: OKLCH → OKLab → linear
+      # sRGB → gamma-encoded sRGB. Colors outside the sRGB gamut are clipped
+      # per channel; call {#clamp_to_gamut} first for a perceptual fit.
+      #
+      # @return [RGB] The color in RGB color space
       def to_rgb
-        # For now, convert via approximation - would need proper OKLCH->sRGB conversion
-        # This is a simplified placeholder that approximates RGB from OKLCH
         require_relative "rgb"
 
-        # Simple approximation: use lightness and chroma to estimate RGB
-        base = (@lightness.to_ratio * 255).round
-        saturation = (@chroma * 255).value
+        r, g, b = to_linear_srgb.map { |channel| linear_to_srgb(channel) }
+        Unmagic::Color::RGB.new(
+          red: (r * 255).round.clamp(0, 255),
+          green: (g * 255).round.clamp(0, 255),
+          blue: (b * 255).round.clamp(0, 255),
+          alpha: @alpha,
+        )
+      end
 
-        # Convert hue to RGB ratios (very simplified)
-        h_rad = (@hue * Math::PI / 180).value
-        r_offset = (Math.cos(h_rad) * saturation).round
-        g_offset = (Math.cos(h_rad + 2 * Math::PI / 3) * saturation).round
-        b_offset = (Math.cos(h_rad + 4 * Math::PI / 3) * saturation).round
+      # Whether this color can be displayed in the sRGB gamut.
+      #
+      # OKLCH can describe colors no sRGB monitor can show — typically
+      # high-chroma colors near very light or very dark lightness, where the
+      # sRGB gamut narrows. This returns false for those.
+      #
+      # @param epsilon [Float] Tolerance for channels sitting just past 0 or 1
+      # @return [Boolean] true if every linear sRGB channel falls within [0, 1]
+      def in_gamut?(epsilon = 1e-4)
+        to_linear_srgb.all? { |channel| channel >= -epsilon && channel <= 1.0 + epsilon }
+      end
 
-        r = (base + r_offset).clamp(0, 255)
-        g = (base + g_offset).clamp(0, 255)
-        b = (base + b_offset).clamp(0, 255)
+      # Pull this color into the sRGB gamut by reducing chroma.
+      #
+      # Holds lightness and hue fixed and binary-searches chroma downward
+      # until the color is displayable. An already-displayable color is
+      # returned unchanged. This is the perceptually correct way to map an
+      # out-of-gamut OKLCH color — clipping RGB channels instead shifts hue.
+      #
+      # @return [OKLCH] An in-gamut color with the same lightness and hue
+      #
+      # @example
+      #   vivid = OKLCH.new(lightness: 0.95, chroma: 0.3, hue: 140)
+      #   vivid.clamp_to_gamut # => a displayable, lower-chroma green
+      def clamp_to_gamut
+        return self if in_gamut?
 
-        Unmagic::Color::RGB.new(red: r, green: g, blue: b, alpha: @alpha)
+        lo = 0.0
+        hi = @chroma.value
+        20.times do
+          mid = (lo + hi) / 2.0
+          candidate = self.class.new(lightness: @lightness.to_ratio, chroma: mid, hue: @hue.value, alpha: @alpha.value)
+          if candidate.in_gamut?
+            lo = mid
+          else
+            hi = mid
+          end
+        end
+
+        self.class.new(lightness: @lightness.to_ratio, chroma: lo, hue: @hue.value, alpha: @alpha.value)
       end
 
       # Convert to hex string.
@@ -539,6 +590,37 @@ module Unmagic
 
       def clamp01(x)
         x.clamp(0.0, 1.0)
+      end
+
+      # OKLCH → OKLab → linear sRGB. Channels may fall outside [0, 1] when the
+      # color is out of gamut; callers clip or gamut-map as needed.
+      #
+      # @return [Array<Float>] Linear (non-gamma) sRGB channels
+      def to_linear_srgb
+        l, a, b = to_oklab
+
+        l_ = ((l + (0.3963377774 * a) + (0.2158037573 * b))**3)
+        m_ = ((l - (0.1055613458 * a) - (0.0638541728 * b))**3)
+        s_ = ((l - (0.0894841775 * a) - (1.2914855480 * b))**3)
+
+        [
+          (4.0767416621 * l_) - (3.3077115913 * m_) + (0.2309699292 * s_),
+          (-1.2684380046 * l_) + (2.6097574011 * m_) - (0.3413193965 * s_),
+          (-0.0041960863 * l_) - (0.7034186147 * m_) + (1.7076147010 * s_),
+        ]
+      end
+
+      # Gamma-encode a single linear sRGB channel, clipping to [0, 1].
+      #
+      # @param channel [Float] A linear sRGB channel value
+      # @return [Float] The gamma-encoded sRGB channel (0.0-1.0)
+      def linear_to_srgb(channel)
+        channel = channel.clamp(0.0, 1.0)
+        if channel <= 0.0031308
+          12.92 * channel
+        else
+          (1.055 * (channel**(1 / 2.4))) - 0.055
+        end
       end
     end
   end

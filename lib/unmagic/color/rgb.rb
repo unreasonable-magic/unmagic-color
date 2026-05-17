@@ -379,21 +379,31 @@ module Unmagic
 
       # Convert to OKLCH color space.
       #
-      # Converts this RGB color to OKLCH (Lightness, Chroma, Hue).
+      # Converts this RGB color to OKLCH (Lightness, Chroma, Hue) using the
+      # full OKLab color-science pipeline: gamma-decoded sRGB → linear sRGB →
+      # OKLab → OKLCH.
       #
       # @return [OKLCH] The color in OKLCH color space
-      # @note This is currently a simplified approximation.
       def to_oklch
-        # For now, simple approximation based on RGB -> HSL -> OKLCH
-        # This is a simplified placeholder
         require_relative "oklch"
-        # Convert lightness roughly from RGB luminance
-        l = luminance
-        # Approximate chroma from saturation and lightness
-        hsl = to_hsl
-        c = hsl.saturation.to_ratio * 0.2 * (1 - (l - 0.5).abs * 2)
-        h = hsl.hue
-        Unmagic::Color::OKLCH.new(lightness: l, chroma: c, hue: h, alpha: @alpha)
+
+        r = srgb_to_linear(@red.value / 255.0)
+        g = srgb_to_linear(@green.value / 255.0)
+        b = srgb_to_linear(@blue.value / 255.0)
+
+        l = Math.cbrt((0.4122214708 * r) + (0.5363325363 * g) + (0.0514459929 * b))
+        m = Math.cbrt((0.2119034982 * r) + (0.6806995451 * g) + (0.1073969566 * b))
+        s = Math.cbrt((0.0883024619 * r) + (0.2817188376 * g) + (0.6299787005 * b))
+
+        ok_l = (0.2104542553 * l) + (0.7936177850 * m) - (0.0040720468 * s)
+        ok_a = (1.9779984951 * l) - (2.4285922050 * m) + (0.4505937099 * s)
+        ok_b = (0.0259040371 * l) + (0.7827717662 * m) - (0.8086757660 * s)
+
+        chroma = Math.sqrt((ok_a * ok_a) + (ok_b * ok_b))
+        hue = Math.atan2(ok_b, ok_a) * 180.0 / Math::PI
+        hue += 360.0 if hue.negative?
+
+        Unmagic::Color::OKLCH.new(lightness: ok_l, chroma: chroma, hue: hue, alpha: @alpha)
       end
 
       # Calculate the relative luminance.
@@ -548,6 +558,18 @@ module Unmagic
       end
 
       private
+
+      # Gamma-decode a single sRGB channel to linear light.
+      #
+      # @param channel [Float] An sRGB channel value (0.0-1.0)
+      # @return [Float] The linear sRGB channel value
+      def srgb_to_linear(channel)
+        if channel <= 0.04045
+          channel / 12.92
+        else
+          ((channel + 0.055) / 1.055)**2.4
+        end
+      end
 
       # Convert to ANSI true color format (24-bit RGB).
       #
