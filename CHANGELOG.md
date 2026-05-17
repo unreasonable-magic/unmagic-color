@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3] - 2026-05-17
+
+### Added
+
+#### Perceptual Tonal Scales
+- `scale(steps:, lightness:, chroma:, hue_shift:, anchor:, gamut:)` - generates perceptually-uniform tonal palettes in OKLCH, controlling lightness, chroma, and hue independently
+- An 11-step scale anchored in the middle produces a Tailwind-style 50–950 palette (`scale` itself knows nothing about Tailwind)
+- Tapered default chroma curve that rises into the mid-tones and eases off near white and black, avoiding muddy lights and neon darks
+- `anchor:` pins the source color to an exact step and builds the rest of the scale around it
+- `lightness:`, `chroma:`, and `hue_shift:` accept ranges, arrays, or procs for full control over each curve
+- `gamut:` gamut-maps results into sRGB by default, or returns raw wide-gamut OKLCH with `:none`
+
+#### OKLCH Gamut Mapping
+- `OKLCH#in_gamut?` - reports whether a color is displayable within the sRGB gamut
+- `OKLCH#clamp_to_gamut` - pulls an out-of-gamut color into sRGB by reducing chroma while holding lightness and hue fixed (perceptually correct, unlike per-channel RGB clipping)
+- `OKLCH#to_oklab` - converts to the cartesian OKLab color space
+
+### Fixed
+- Rainbow gradient rendering in the WebAssembly demo
+
 ## [0.2.2] - 2026-01-05
 
 ### Added

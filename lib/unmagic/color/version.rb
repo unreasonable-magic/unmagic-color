@@ -3,6 +3,6 @@
 module Unmagic
   class Color
     # Current version of the Unmagic::Color gem
-    VERSION = "0.2.2"
+    VERSION = "0.3"
   end
 end
