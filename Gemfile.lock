@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    unmagic-color (0.2.2)
+    unmagic-color (0.3)
 
 GEM
   remote: https://rubygems.org/
